@@ -29,6 +29,9 @@ jobs:
           sdkmanager "platform-tools"
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.0"
+          sdkmanager "cmdline-tools;latest"
+          sdkmanager "ndk;26.3.11579264"
+          sdkmanager "cmake;3.22.1"
 
       - name: Configure Android environment
         run: |
@@ -77,7 +80,18 @@ jobs:
         run: |
           java -version
           adb version
-          test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
+          echo "=== JAVA ==="
+          java -version
+
+          echo "=== ANDROID SDK ==="
+          echo "$ANDROID_SDK_ROOT"
+          test -d "$ANDROID_SDK_ROOT/platform-tools"
+          test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
+          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
+          test -d "$ANDROID_SDK_ROOT/ndk/26.3.11579264"
+          test -d "$ANDROID_SDK_ROOT/cmake/3.22.1"
+
+          echo "=== GODOT ==="
           "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
 
       - name: Export APK
