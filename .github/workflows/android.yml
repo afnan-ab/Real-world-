@@ -94,6 +94,25 @@ jobs:
           echo "=== GODOT ==="
           "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
 
+      - name: Verify Godot export templates
+        run: |
+          echo "=== GODOT VERSION ==="
+          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
+
+          echo "=== EXPORT TEMPLATE DIRECTORY ==="
+          find "$HOME/.local/share/godot/export_templates" -maxdepth 3 -type f -print 2>/dev/null || true
+
+          echo "=== GODOT TEMPLATE FILES ==="
+          find "$HOME/.local/share/godot/export_templates" -type f \
+            \( -name "android_release.apk" -o -name "android_debug.apk" -o -name "android_source.zip" -o -name "version.txt" \) \
+            -print 2>/dev/null || true
+
+          echo "=== ANDROID SDK ==="
+          echo "$ANDROID_SDK_ROOT"
+          test -f "$ANDROID_SDK_ROOT/platform-tools/adb"
+          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
+          test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
+
       - name: Export APK
         run: |
           mkdir -p build
