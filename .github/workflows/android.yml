@@ -112,7 +112,40 @@ jobs:
           test -f "$ANDROID_SDK_ROOT/platform-tools/adb"
           test -d "$ANDROID_SDK_ROOT/platforms/android-35"
           test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
+          
+      - name: Diagnose Godot Android export
+        run: |
+          set -x
 
+          echo "===== GODOT ====="
+          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
+
+          echo "===== TEMPLATE FILES ====="
+          find "$HOME/.local/share/godot/export_templates" \
+            -maxdepth 3 -type f -print | sort
+
+          echo "===== SDK ====="
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_SDK_ROOT/platforms/android-35"
+          ls -la "$ANDROID_SDK_ROOT/build-tools/35.0.0"
+
+          echo "===== JAVA ====="
+          java -version
+
+          echo "===== GODOT SETTINGS ====="
+          cat "$HOME/.config/godot/editor_settings-4.tres"
+
+          echo "===== PRESET ====="
+          cat export_presets.cfg
+
+          echo "===== GODOT EXPORT TEST ====="
+          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
+            --headless \
+            --path . \
+            --export-release "Android" \
+            build/test.apk
+            
       - name: Export APK
         run: |
           mkdir -p build
