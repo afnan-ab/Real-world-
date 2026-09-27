@@ -29,6 +29,19 @@ jobs:
           log-accepted-android-sdk-licenses: false
           packages: 'platform-tools'
 
+      - name: Prepare Android SDK and ADB
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
+
+          yes | sdkmanager --licenses >/dev/null || true
+
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+          adb start-server
+          adb version
+
       - name: Export Godot Android APK
         uses: firebelley/godot-export@v7.0.0
         with:
