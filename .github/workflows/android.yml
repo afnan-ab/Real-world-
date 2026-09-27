@@ -143,6 +143,7 @@ jobs:
           "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
             --headless \
             --path . \
+          mkdir -p build
             --export-release "Android" \
             build/test.apk
             
