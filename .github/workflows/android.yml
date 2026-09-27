@@ -77,7 +77,7 @@ jobs:
         run: |
           java -version
           adb version
-          adb start-server || true
+          test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
           "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
 
       - name: Export APK
