@@ -85,9 +85,10 @@ jobs:
           mkdir -p build
           "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
             --headless \
-            --path . \
+            --verbose \
+            --path "$GITHUB_WORKSPACE" \
             --export-release "Android" \
-            build/real_world_open_world.apk
+            "$GITHUB_WORKSPACE/build/real_world_open_world.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
