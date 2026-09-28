@@ -38,127 +38,77 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
-          echo "PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/build-tools/35.0.0" >> "$GITHUB_PATH"
 
-      - name: Download Godot
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          mkdir -p "$HOME/godot"
-          wget -q \
-            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip \
-            -O "$HOME/godot/godot.zip"
-          unzip -q "$HOME/godot/godot.zip" -d "$HOME/godot"
-          chmod +x "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64"
+          mkdir -p .github/keystore
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > .github/keystore/realworld.keystore
+          chmod 600 .github/keystore/realworld.keystore
+          test -s .github/keystore/realworld.keystore
 
-      - name: Install Godot export templates
+      - name: Verify signing keystore
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          keytool -list \
+            -keystore .github/keystore/realworld.keystore \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS"
+
+      - name: Install Godot
         run: |
           mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
-          wget -q \
-            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz \
-            -O "$HOME/godot/templates.tpz"
-          unzip -q "$HOME/godot/templates.tpz" -d "$HOME/godot/templates"
-          cp -r "$HOME/godot/templates/templates/"* \
-            "$HOME/.local/share/godot/export_templates/4.4.1.stable/" || true
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
+          unzip -q Godot_v4.4.1-stable_linux.x86_64.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          mkdir -p /tmp/godot_templates
+          unzip -q Godot_v4.4.1-stable_export_templates.tpz -d /tmp/godot_templates
+          unzip -q /tmp/godot_templates/templates/android_source.zip -d "$HOME/.local/share/godot/export_templates/4.4.1.stable" || true
+          cp /tmp/godot_templates/templates/android_debug.apk "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          cp /tmp/godot_templates/templates/android_release.apk "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
 
-      - name: Configure Godot Android paths
+      - name: Configure signing password
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
-          mkdir -p "$HOME/.config/godot"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
 
-          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
-          [gd_resource type="EditorSettings" format=3]
+          p = Path("export_presets.cfg")
+          s = p.read_text()
 
-          [resource]
-          export/android/java_sdk_path = "$JAVA_HOME_17_X64"
-          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
-          EOF
+          s = s.replace(
+              'keystore/release_password="realworld123"',
+              'keystore/release_password="' + os.environ["KEYSTORE_PASSWORD"] + '"'
+          )
 
-          echo "Java SDK: $JAVA_HOME_17_X64"
-          echo "Android SDK: $ANDROID_SDK_ROOT"
-          test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
-          test -x "$JAVA_HOME_17_X64/bin/java"
+          p.write_text(s)
+          PY
 
-      - name: Verify Android tools
+      - name: Export signed Android APK
         run: |
-          java -version
-          adb version
-          echo "=== JAVA ==="
-          java -version
-
-          echo "=== ANDROID SDK ==="
-          echo "$ANDROID_SDK_ROOT"
-          test -d "$ANDROID_SDK_ROOT/platform-tools"
-          test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
-          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
-          test -d "$ANDROID_SDK_ROOT/ndk/26.3.11579264"
-          test -d "$ANDROID_SDK_ROOT/cmake/3.22.1"
-
-          echo "=== GODOT ==="
-          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
-
-      - name: Verify Godot export templates
-        run: |
-          echo "=== GODOT VERSION ==="
-          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
-
-          echo "=== EXPORT TEMPLATE DIRECTORY ==="
-          find "$HOME/.local/share/godot/export_templates" -maxdepth 3 -type f -print 2>/dev/null || true
-
-          echo "=== GODOT TEMPLATE FILES ==="
-          find "$HOME/.local/share/godot/export_templates" -type f \
-            \( -name "android_release.apk" -o -name "android_debug.apk" -o -name "android_source.zip" -o -name "version.txt" \) \
-            -print 2>/dev/null || true
-
-          echo "=== ANDROID SDK ==="
-          echo "$ANDROID_SDK_ROOT"
-          test -f "$ANDROID_SDK_ROOT/platform-tools/adb"
-          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
-          test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
-          
-      - name: Diagnose Godot Android export
-        run: |
-          set -x
-
-          echo "===== GODOT ====="
-          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" --version
-
-          echo "===== TEMPLATE FILES ====="
-          find "$HOME/.local/share/godot/export_templates" \
-            -maxdepth 3 -type f -print | sort
-
-          echo "===== SDK ====="
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls -la "$ANDROID_SDK_ROOT"
-          ls -la "$ANDROID_SDK_ROOT/platforms/android-35"
-          ls -la "$ANDROID_SDK_ROOT/build-tools/35.0.0"
-
-          echo "===== JAVA ====="
-          java -version
-
-          echo "===== GODOT SETTINGS ====="
-          cat "$HOME/.config/godot/editor_settings-4.tres"
-
-          echo "===== PRESET ====="
-          cat export_presets.cfg
-
-          echo "===== GODOT EXPORT TEST ====="
           mkdir -p build
-          timeout 180 "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
+          ./Godot_v4.4.1-stable_linux.x86_64 \
             --headless \
             --path . \
-            --export-release "Android" \
-            "$GITHUB_WORKSPACE/build/test.apk"
-            
-      - name: Export APK
+            --export-release Android \
+            build/real_world_open_world.apk
+
+      - name: Verify APK
         run: |
-          mkdir -p build
-          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
-            --headless \
-            --verbose \
-            --path "$GITHUB_WORKSPACE" \
-            --export-release "Android" \
-            "$GITHUB_WORKSPACE/build/real_world_open_world.apk"
+          ls -lh build/real_world_open_world.apk
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose build/real_world_open_world.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: real-world-open-world-apk
           path: build/real_world_open_world.apk
+          if-no-files-found: error
