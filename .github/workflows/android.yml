@@ -85,7 +85,7 @@ jobs:
           s = p.read_text()
 
           s = s.replace(
-              'keystore/release_password="realworld123"',
+              'keystore/release_password="__GITHUB_KEYSTORE_PASSWORD__"',
               'keystore/release_password="' + os.environ["KEYSTORE_PASSWORD"] + '"'
           )
 

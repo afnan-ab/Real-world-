@@ -228,7 +228,7 @@ func _make_city_and_roads():
 func _make_landmarks():
     _make_building(Vector3(-18,0,12), Vector3(12,5,9), Color("#8b5f40"))
     # A small wooden lookout.
-    var deck := _box(Vector3(22,5.0,-5), Vector3(9,0.5,9), _mat(Color("#765033"),0.95), false)
+    var deck: MeshInstance3D = _box(Vector3(22,5.0,-5), Vector3(9,0.5,9), _mat(Color("#765033"),0.95), false)
     for x in [-3.5,3.5]:
         for z in [-3.5,3.5]:
             _box(Vector3(22+x,2.5,-5+z), Vector3(0.3,5,0.3), _mat(Color("#5b3d29"),1.0), false)
