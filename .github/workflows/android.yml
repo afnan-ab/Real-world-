@@ -140,12 +140,12 @@ jobs:
           cat export_presets.cfg
 
           echo "===== GODOT EXPORT TEST ====="
-          "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
+          mkdir -p build
+          timeout 180 "$HOME/godot/Godot_v4.4.1-stable_linux.x86_64" \
             --headless \
             --path . \
-          mkdir -p build
             --export-release "Android" \
-            build/test.apk
+            "$GITHUB_WORKSPACE/build/test.apk"
             
       - name: Export APK
         run: |
