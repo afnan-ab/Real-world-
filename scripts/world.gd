@@ -1,7 +1,7 @@
 extends Node3D
 
-# Real World Open World — Realistic Foundation v4.
-# Procedural open-world foundation with traffic, city props, weather and day/night.
+# Real World Open World — Visual Overhaul v5.
+# Procedural open-world scene with detailed city, vehicles, pedestrians, lighting, weather and day/night.
 
 var time_of_day: float = 8.0
 var weather: String = "clear"
@@ -13,6 +13,10 @@ var rng := RandomNumberGenerator.new()
 var npcs: Array = []
 var traffic: Array = []
 var street_lamps: Array = []
+var building_windows: Array = []
+var traffic_signals: Array = []
+var water_material: StandardMaterial3D
+var day_night_speed: float = 0.045
 
 func _ready() -> void:
     rng.seed = 190428
@@ -27,6 +31,9 @@ func _ready() -> void:
     _make_pedestrians()
     _make_landmarks()
     _make_city_props()
+    _make_extra_street_detail()
+    _make_sidewalk_lamps()
+    _make_city_windows()
     _setup_weather_particles()
 
 func _setup_environment() -> void:
@@ -34,15 +41,15 @@ func _setup_environment() -> void:
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 0.8
+    env.ambient_light_energy = 0.95
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = true
-    env.glow_intensity = 0.65
+    env.glow_intensity = 0.78
     env.glow_strength = 1.15
     env.fog_enabled = true
     env.fog_light_color = Color("#b7c7c9")
-    env.fog_density = 0.00115
+    env.fog_density = 0.00075
     env.fog_height = 18.0
     env.fog_height_density = 0.008
 
@@ -53,7 +60,8 @@ func _setup_environment() -> void:
     sky_mat.ground_bottom_color = Color("#15201b")
     sky_mat.ground_horizon_color = Color("#9eafa8")
     sky_mat.sun_angle_max = 18.0
-    sky_mat.sun_curve = 0.12
+    sky_mat.sun_curve = 0.08
+    sky_mat.energy_multiplier = 0.9
     sky.sky_material = sky_mat
     env.sky = sky
     world_env.environment = env
@@ -73,10 +81,11 @@ func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Col
     m.albedo_color = color
     m.roughness = rough
     m.metallic = metallic
+    m.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
     if emission.a > 0.0:
         m.emission_enabled = true
         m.emission = emission
-        m.emission_energy_multiplier = 1.5
+        m.emission_energy_multiplier = 2.2
     return m
 
 func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = true) -> MeshInstance3D:
@@ -177,7 +186,7 @@ func _make_lake() -> void:
     pm.size = Vector2(115.0, 78.0)
     lake.mesh = pm
     lake.position = Vector3(82, 0.28, -76)
-    var wm := _mat(Color("#176d82"), 0.08, 0.65)
+    var wm := _mat(Color("#176d82"), 0.035, 0.55)
     wm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     wm.albedo_color.a = 0.86
     lake.material_override = wm
@@ -254,7 +263,14 @@ func _make_forests() -> void:
         _make_tree(p, rng.randf_range(0.75, 1.55))
 
 func _make_road(pos: Vector3, size: Vector3) -> void:
-    _box(pos + Vector3(0,0.12,0), size, _mat(Color("#1e2225"), 0.92), false)
+    _box(pos + Vector3(0,0.12,0), size, _mat(Color("#25282b"), 0.86), false)
+    # Dark road shoulders and raised curbs create more believable street depth.
+    if size.x > size.z:
+        _box(pos + Vector3(0,0.17,size.z*0.58), Vector3(size.x,0.18,0.32), _mat(Color("#5f6261"),0.88), false)
+        _box(pos + Vector3(0,0.17,-size.z*0.58), Vector3(size.x,0.18,0.32), _mat(Color("#5f6261"),0.88), false)
+    else:
+        _box(pos + Vector3(size.x*0.58,0.17,0), Vector3(0.32,0.18,size.z), _mat(Color("#5f6261"),0.88), false)
+        _box(pos + Vector3(-size.x*0.58,0.17,0), Vector3(0.32,0.18,size.z), _mat(Color("#5f6261"),0.88), false)
     var sidewalk_size := Vector3(size.x, 0.16, 1.8) if size.x > size.z else Vector3(1.8, 0.16, size.z)
     if size.x > size.z:
         _box(pos + Vector3(0,0.21,size.z * 0.65), sidewalk_size, _mat(Color("#8c8d88"), 0.86), false)
@@ -281,6 +297,10 @@ func _make_building(pos: Vector3, size: Vector3, color: Color, floors: int = 2) 
             _box(pos + Vector3(x,y,size.z/2+0.065), Vector3(1.58,0.08,0.06), frame, false)
 
     _box(pos + Vector3(0,1.15,size.z/2+0.045), Vector3(1.25,2.3,0.09), _mat(Color("#302b26"),0.45), false)
+    # Roof parapet and facade trim.
+    _box(pos + Vector3(0,size.y+0.52,0), Vector3(size.x*1.05,0.22,size.z*1.05), _mat(Color("#303235"),0.76,0.08), false)
+    for side in [-1.0,1.0]:
+        _box(pos + Vector3(0,1.1,side*(size.z/2+0.085)), Vector3(size.x,0.08,0.08), frame, false)
 
 func _make_streetlight(pos: Vector3) -> void:
     _box(pos + Vector3(0,2.7,0), Vector3(0.13,5.4,0.13), _mat(Color("#202326"),0.55,0.1), false)
@@ -316,59 +336,45 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     root.rotation.y = rotation_y
     add_child(root)
 
-    var body_mat := _mat(body_color, 0.28, 0.58)
-    var glass := _mat(Color("#162b37"), 0.12, 0.42)
-    var tire := _mat(Color("#111214"), 0.92)
-    var chrome := _mat(Color("#b9bdbe"), 0.2, 0.8)
-    var lamp := _mat(Color("#f6e9bd"), 0.16, 0.25, Color("#fff0b0"))
+    var body_mat := _mat(body_color, 0.24, 0.62)
+    var trim := _mat(Color("#25282b"), 0.42, 0.18)
+    var glass := _mat(Color("#102b39"), 0.07, 0.52)
+    var tire := _mat(Color("#0c0d0e"), 0.96)
+    var chrome := _mat(Color("#c6c8c7"), 0.18, 0.86)
+    var head_mat := _mat(Color("#f6e9bd"), 0.10, 0.28, Color("#fff0b0"))
+    var tail_mat := _mat(Color("#7e1118"), 0.18, 0.18, Color("#ff1b24"))
 
-    _local_box(root, Vector3(0,0.62,0), Vector3(4.3,0.7,2.0), body_mat)
-    _local_box(root, Vector3(0,1.12,0), Vector3(2.35,0.65,1.75), body_mat)
-    _local_box(root, Vector3(0,1.14,0), Vector3(2.1,0.46,1.58), glass, false)
+    _local_box(root, Vector3(0,0.64,0), Vector3(4.45,0.72,2.02), body_mat, false)
+    _local_box(root, Vector3(0,1.08,0), Vector3(2.55,0.70,1.78), body_mat, false)
+    _local_box(root, Vector3(0,1.16,0), Vector3(2.22,0.48,1.62), glass, false)
+    _local_box(root, Vector3(0,0.36,0), Vector3(4.55,0.12,2.12), trim, false)
+    _local_box(root, Vector3(0,0.84,-1.02), Vector3(3.35,0.16,0.08), chrome, false)
+    _local_box(root, Vector3(0,0.84,1.02), Vector3(3.35,0.16,0.08), chrome, false)
 
     for sx in [-1.0,1.0]:
-        for sz in [-0.72,0.72]:
+        for sz in [-0.76,0.76]:
             var wheel := MeshInstance3D.new()
             var cyl := CylinderMesh.new()
-            cyl.top_radius = 0.43
-            cyl.bottom_radius = 0.43
-            cyl.height = 0.24
-            cyl.radial_segments = 16
+            cyl.top_radius = 0.46; cyl.bottom_radius = 0.46; cyl.height = 0.28; cyl.radial_segments = 24
             wheel.mesh = cyl
-            wheel.position = Vector3(sx*1.38,0.48,sz)
+            wheel.position = Vector3(sx*1.42,0.48,sz)
             wheel.rotation_degrees = Vector3(90,0,0)
             wheel.material_override = tire
             root.add_child(wheel)
             var hub := MeshInstance3D.new()
             var hm := CylinderMesh.new()
-            hm.top_radius = 0.16
-            hm.bottom_radius = 0.16
-            hm.height = 0.25
-            hm.radial_segments = 12
-            hub.mesh = hm
-            hub.position = wheel.position
-            hub.rotation_degrees = Vector3(90,0,0)
-            hub.material_override = chrome
+            hm.top_radius = 0.18; hm.bottom_radius = 0.18; hm.height = 0.30; hm.radial_segments = 18
+            hub.mesh = hm; hub.position = wheel.position; hub.rotation_degrees = Vector3(90,0,0); hub.material_override = chrome
             root.add_child(hub)
 
-    _local_box(root, Vector3(1.93,0.72,0.0), Vector3(0.12,0.24,0.62), lamp, false)
-    _local_box(root, Vector3(-1.93,0.72,0.0), Vector3(0.12,0.24,0.62), _mat(Color("#8d1d1d"),0.2,0.15,Color("#5d0808")), false)
+    _local_box(root, Vector3(2.13,0.76,-0.56), Vector3(0.12,0.30,0.62), head_mat, false)
+    _local_box(root, Vector3(2.13,0.76,0.56), Vector3(0.12,0.30,0.62), head_mat, false)
+    _local_box(root, Vector3(-2.13,0.76,-0.56), Vector3(0.12,0.30,0.62), tail_mat, false)
+    _local_box(root, Vector3(-2.13,0.76,0.56), Vector3(0.12,0.30,0.62), tail_mat, false)
 
-    var head_l := OmniLight3D.new()
-    head_l.position = Vector3(2.05,0.78,-0.55)
-    head_l.omni_range = 13.0
-    head_l.light_energy = 2.0
-    head_l.light_color = Color("#fff1c9")
-    head_l.visible = false
-    root.add_child(head_l)
-    var head_r := OmniLight3D.new()
-    head_r.position = Vector3(2.05,0.78,0.55)
-    head_r.omni_range = 13.0
-    head_r.light_energy = 2.0
-    head_r.light_color = Color("#fff1c9")
-    head_r.visible = false
-    root.add_child(head_r)
-    root.set_meta("headlights", [head_l, head_r])
+    var head_l := OmniLight3D.new(); head_l.position=Vector3(2.25,0.78,-0.55); head_l.omni_range=16; head_l.light_energy=2.5; head_l.light_color=Color("#fff1c9"); head_l.visible=false; root.add_child(head_l)
+    var head_r := OmniLight3D.new(); head_r.position=Vector3(2.25,0.78,0.55); head_r.omni_range=16; head_r.light_energy=2.5; head_r.light_color=Color("#fff1c9"); head_r.visible=false; root.add_child(head_r)
+    root.set_meta("headlights", [head_l,head_r])
     return root
 
 func _local_box(root: Node3D, pos: Vector3, size: Vector3, mat: Material, collision: bool = false) -> void:
@@ -422,36 +428,29 @@ func _make_person(pos: Vector3, shirt_color: Color, scale_v: float = 1.0) -> Nod
     root.scale = Vector3.ONE * scale_v
     add_child(root)
 
-    var skin := _mat(Color("#b87958"),0.68)
-    var shirt := _mat(shirt_color,0.78)
-    var pants := _mat(Color("#22262a"),0.86)
-    var shoes := _mat(Color("#141517"),0.92)
-
-    _local_person_part(root, Vector3(0,1.02,0), Vector3(0.52,0.88,0.34), shirt)
-    _local_person_part(root, Vector3(0,1.68,0), Vector3(0.34,0.34,0.34), skin, true)
-    _local_person_part(root, Vector3(-0.18,0.37,0), Vector3(0.16,0.72,0.16), pants)
-    _local_person_part(root, Vector3(0.18,0.37,0), Vector3(0.16,0.72,0.16), pants)
-    _local_person_part(root, Vector3(-0.38,1.02,0), Vector3(0.14,0.72,0.14), skin)
-    _local_person_part(root, Vector3(0.38,1.02,0), Vector3(0.14,0.72,0.14), skin)
-    _local_person_part(root, Vector3(-0.18,0.0,-0.02), Vector3(0.22,0.12,0.4), shoes)
-    _local_person_part(root, Vector3(0.18,0.0,-0.02), Vector3(0.22,0.12,0.4), shoes)
+    var skin := _mat(Color("#b87857"),0.58)
+    var shirt := _mat(shirt_color,0.74)
+    var pants := _mat(Color("#20252a"),0.82)
+    var shoes := _mat(Color("#111315"),0.92)
+    var hair := _mat(Color("#181a1b"),0.90)
+    var body := Node3D.new(); body.position.y=0.9; root.add_child(body)
+    _local_person_part(body,Vector3(0,0.72,0),Vector3(0.54,0.92,0.36),shirt)
+    _local_person_part(body,Vector3(0,1.38,0),Vector3(0.36,0.36,0.36),skin,true)
+    _local_person_part(body,Vector3(0,1.56,0),Vector3(0.38,0.13,0.38),hair,true)
+    var arm_l:=Node3D.new(); arm_l.position=Vector3(-0.37,0.95,0); body.add_child(arm_l); _local_person_part(arm_l,Vector3(0,-0.34,0),Vector3(0.14,0.70,0.14),skin)
+    var arm_r:=Node3D.new(); arm_r.position=Vector3(0.37,0.95,0); body.add_child(arm_r); _local_person_part(arm_r,Vector3(0,-0.34,0),Vector3(0.14,0.70,0.14),skin)
+    var leg_l:=Node3D.new(); leg_l.position=Vector3(-0.18,0.45,0); body.add_child(leg_l); _local_person_part(leg_l,Vector3(0,-0.35,0),Vector3(0.17,0.72,0.17),pants); _local_person_part(leg_l,Vector3(0,-0.73,-0.08),Vector3(0.22,0.14,0.40),shoes)
+    var leg_r:=Node3D.new(); leg_r.position=Vector3(0.18,0.45,0); body.add_child(leg_r); _local_person_part(leg_r,Vector3(0,-0.35,0),Vector3(0.17,0.72,0.17),pants); _local_person_part(leg_r,Vector3(0,-0.73,-0.08),Vector3(0.22,0.14,0.40),shoes)
+    root.set_meta("anim_parts",[arm_l,arm_r,leg_l,leg_r,body])
     return root
 
-func _local_person_part(root: Node3D, pos: Vector3, scale_v: Vector3, mat: Material, sphere: bool = false) -> void:
-    var mi := MeshInstance3D.new()
-    if sphere:
-        var sm := SphereMesh.new()
-        sm.radial_segments = 16
-        sm.rings = 10
-        mi.mesh = sm
-    else:
-        var box := BoxMesh.new()
-        box.size = Vector3.ONE
-        mi.mesh = box
-    mi.position = pos
-    mi.scale = scale_v
-    mi.material_override = mat
-    root.add_child(mi)
+func _animate_person(root: Node3D, phase: float, t: float) -> void:
+    var parts: Array = root.get_meta("anim_parts",[])
+    if parts.size() < 5: return
+    var swing := sin(t*4.0+phase)*0.42
+    parts[0].rotation.x = swing; parts[1].rotation.x = -swing
+    parts[2].rotation.x = -swing*0.8; parts[3].rotation.x = swing*0.8
+    parts[4].position.y = 0.9 + abs(sin(t*4.0+phase))*0.025
 
 func _make_pedestrians() -> void:
     var shirt_colors := [Color("#345f8a"),Color("#8a3f3f"),Color("#557b4a"),Color("#8c6b3e"),Color("#5d4f86")]
@@ -467,7 +466,10 @@ func _make_landmarks() -> void:
         for z in [-3.8,3.8]:
             _box(Vector3(22+x,2.5,-5+z), Vector3(0.3,5,0.3), _mat(Color("#5b3d29"),0.96), false)
 
-func _make_city_props() -> void:
+func _make_city_props()
+    _make_extra_street_detail()
+    _make_sidewalk_lamps()
+    _make_city_windows() -> void:
     # Crosswalks and lane separators
     for x in range(-155,156,18):
         for i in range(6):
@@ -485,6 +487,35 @@ func _make_city_props() -> void:
         _box(Vector3(x,0.65,-36),Vector3(3.0,0.18,0.55),_mat(Color("#6b4930"),0.82),false)
         for leg_x in [-1.0,1.0]:
             _box(Vector3(x+leg_x,0.28,-36),Vector3(0.14,0.75,0.14),_mat(Color("#303234"),0.62,0.15),false)
+
+func _make_extra_street_detail() -> void:
+    # Parking bays, bollards, bins and utility boxes make the city feel inhabited.
+    for x in range(-150,151,18):
+        _box(Vector3(x,0.30,37.5),Vector3(0.10,0.05,4.2),_mat(Color("#d8d8d2"),0.75),false)
+        for side in [-1.0,1.0]:
+            _box(Vector3(x+side*4.0,0.55,34.0),Vector3(0.20,1.0,0.20),_mat(Color("#303336"),0.62,0.1),false)
+    for p in [Vector3(-48,0,24),Vector3(46,0,24),Vector3(-48,0,-52),Vector3(46,0,-52)]:
+        _box(p+Vector3(0,0.55,0),Vector3(0.85,1.1,0.65),_mat(Color("#4d5a55"),0.88),false)
+        _box(p+Vector3(0,1.18,0),Vector3(0.55,0.08,0.45),_mat(Color("#202425"),0.7),false)
+
+func _make_sidewalk_lamps() -> void:
+    for x in range(-150,151,30):
+        var p:=Vector3(x,0,24.0)
+        _box(p+Vector3(0,2.4,0),Vector3(0.10,4.8,0.10),_mat(Color("#303235"),0.5,0.15),false)
+        _box(p+Vector3(0.42,4.62,0),Vector3(0.9,0.08,0.08),_mat(Color("#303235"),0.5,0.15),false)
+        var l:=OmniLight3D.new(); l.position=p+Vector3(0.88,4.48,0); l.omni_range=9; l.light_energy=1.0; l.light_color=Color("#ffe0a5"); l.visible=false; add_child(l); street_lamps.append(l)
+
+func _make_city_windows() -> void:
+    # A second layer of small emissive windows switches on at night.
+    for x in [-52.0,-14.0,25.0,64.0]:
+        for z in [-24.0,66.0]:
+            var base_y:=8.0
+            for row in range(3):
+                for col in range(3):
+                    var w:=MeshInstance3D.new(); var bm:=BoxMesh.new(); bm.size=Vector3(1.1,0.8,0.06); w.mesh=bm
+                    w.position=Vector3(x-3.5+col*3.5,base_y+row*3.0,z+7.0)
+                    w.material_override=_mat(Color("#b6d8e7"),0.18,0.15,Color("#10222b"))
+                    add_child(w); building_windows.append(w)
 
 func _setup_weather_particles() -> void:
     rain_particles = _weather_particles(false)
@@ -516,7 +547,7 @@ func _weather_particles(snow: bool) -> GPUParticles3D:
     return particles
 
 func _process(delta: float) -> void:
-    time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
+    time_of_day = fmod(time_of_day + delta * day_night_speed, 24.0)
     var angle := (time_of_day / 24.0) * TAU
     sun.rotation_degrees.x = -32.0 + sin(angle) * 55.0
     sun.rotation_degrees.y = -35.0 + cos(angle) * 15.0
@@ -532,6 +563,18 @@ func _process(delta: float) -> void:
         n.position = base + Vector3(cos(t*0.45+phase)*radius,0.05,sin(t*0.45+phase)*radius)
         n.rotation.y = -atan2(sin(t*0.45+phase),cos(t*0.45+phase))
         n.position.y = 0.05 + abs(sin(t*3.2+phase))*0.025
+        _animate_person(n, phase, t)
+
+    var night_now := time_of_day < 6.0 or time_of_day > 18.3
+    for w in building_windows:
+        var wm: StandardMaterial3D = w.material_override
+        wm.emission_enabled = night_now
+        if night_now:
+            wm.emission = Color("#ffd98a")
+            wm.emission_energy_multiplier = 1.7
+        else:
+            wm.emission = Color("#10222b")
+            wm.emission_energy_multiplier = 0.0
 
     for data in traffic:
         var car: Node3D = data["node"]
