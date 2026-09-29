@@ -2,7 +2,7 @@ name: Build RealWorld V5 Android
 
 on:
   push:
-    branches: [main]
+    branches: [v5]
   workflow_dispatch:
 
 jobs:
@@ -19,13 +19,26 @@ jobs:
           version: 4.4.1
           use-dotnet: false
 
-      - name: Import project
-        run: godot --headless --editor --quit
+      - name: Install Android export templates
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          wget -q --show-progress \
+            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz \
+            -O /tmp/godot_templates.tpz
+          unzip -q -o /tmp/godot_templates.tpz -d /tmp/godot_templates
+          cp -a /tmp/godot_templates/templates/. \
+            "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
 
-      - name: Build Android
+      - name: Check project
+        run: |
+          godot --headless --path . --editor --quit
+
+      - name: Build Android APK
         run: |
           mkdir -p build
-          godot --headless --path . --export-release "Android" build/RealWorld-V5.apk
+          godot --headless --path . \
+            --export-release "Android" \
+            build/RealWorld-V5.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
