@@ -18,19 +18,11 @@ jobs:
         with:
           version: 4.4.1
           use-dotnet: false
+          export-templates: true
 
-      - name: Install Android export templates
+      - name: Verify Godot
         run: |
-          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
-          wget -q --show-progress \
-            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz \
-            -O /tmp/godot_templates.tpz
-          unzip -q -o /tmp/godot_templates.tpz -d /tmp/godot_templates
-          cp -a /tmp/godot_templates/templates/. \
-            "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
-
-      - name: Check project
-        run: |
+          godot --version
           godot --headless --path . --editor --quit
 
       - name: Build Android APK
