@@ -24,7 +24,7 @@ This is still a procedural mobile game prototype. It is **not GTA VI-level produ
 The included GitHub Actions workflow exports the Android APK and uploads it as the `real-world-open-world-apk` artifact.
 
 
-## Visual Overhaul v5
+## Realistic Foundation v4
 - Procedural city infrastructure and visual props
 - Moving traffic system on main roads
 - Vehicle headlights at night
