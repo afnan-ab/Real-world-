@@ -22,3 +22,15 @@ This is still a procedural mobile game prototype. It is **not GTA VI-level produ
 
 ### Build
 The included GitHub Actions workflow exports the Android APK and uploads it as the `real-world-open-world-apk` artifact.
+
+
+## Realistic Foundation v4
+- Procedural city infrastructure and visual props
+- Moving traffic system on main roads
+- Vehicle headlights at night
+- Animated pedestrian motion/bobbing
+- Crosswalks, traffic-light props, rooftop equipment and park benches
+- Dynamic day/night lighting and weather
+- Cinematic third-person camera smoothing
+
+This remains a procedural game foundation; photoreal AAA fidelity requires authored high-resolution assets, animation, audio, advanced shaders and world streaming.

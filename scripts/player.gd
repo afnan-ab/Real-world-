@@ -8,6 +8,7 @@ var joystick := Vector2.ZERO
 var visual: Node3D
 var camera: Camera3D
 var walk_time: float = 0.0
+var camera_target: Vector3
 
 func _ready() -> void:
     var capsule := CapsuleShape3D.new()
@@ -15,6 +16,7 @@ func _ready() -> void:
     capsule.height = 1.8
     $CollisionShape3D.shape = capsule
     camera = $CameraPivot/Camera3D
+    camera_target = camera.position
     _build_human()
 
 func _build_human() -> void:
@@ -88,3 +90,6 @@ func _physics_process(delta: float) -> void:
     else:
         velocity.y = 0.0
     move_and_slide()
+
+    # Smooth third-person camera follow for a more cinematic feel.
+    camera.position = camera.position.lerp(camera_target, min(1.0, delta * 5.5))

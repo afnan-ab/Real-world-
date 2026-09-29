@@ -1,7 +1,7 @@
 extends Node3D
 
-# Real World Open World — procedural realistic-style pass.
-# No external 3D assets required. Built for a polished mobile-friendly look.
+# Real World Open World — Realistic Foundation v4.
+# Procedural open-world foundation with traffic, city props, weather and day/night.
 
 var time_of_day: float = 8.0
 var weather: String = "clear"
@@ -11,6 +11,8 @@ var rain_particles: GPUParticles3D
 var snow_particles: GPUParticles3D
 var rng := RandomNumberGenerator.new()
 var npcs: Array = []
+var traffic: Array = []
+var street_lamps: Array = []
 
 func _ready() -> void:
     rng.seed = 190428
@@ -21,8 +23,10 @@ func _ready() -> void:
     _make_forests()
     _make_city_and_roads()
     _make_cars()
+    _make_traffic()
     _make_pedestrians()
     _make_landmarks()
+    _make_city_props()
     _setup_weather_particles()
 
 func _setup_environment() -> void:
@@ -288,6 +292,7 @@ func _make_streetlight(pos: Vector3) -> void:
     lamp.light_color = Color("#ffe0a1")
     lamp.visible = false
     add_child(lamp)
+    street_lamps.append(lamp)
 
 func _make_city_and_roads() -> void:
     _make_road(Vector3(0,0,28), Vector3(390,0.24,9))
@@ -305,7 +310,7 @@ func _make_city_and_roads() -> void:
     for x in range(-174,175,24):
         _make_streetlight(Vector3(x,0,33))
 
-func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> void:
+func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node3D:
     var root := Node3D.new()
     root.position = pos
     root.rotation.y = rotation_y
@@ -349,6 +354,23 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> void
     _local_box(root, Vector3(1.93,0.72,0.0), Vector3(0.12,0.24,0.62), lamp, false)
     _local_box(root, Vector3(-1.93,0.72,0.0), Vector3(0.12,0.24,0.62), _mat(Color("#8d1d1d"),0.2,0.15,Color("#5d0808")), false)
 
+    var head_l := OmniLight3D.new()
+    head_l.position = Vector3(2.05,0.78,-0.55)
+    head_l.omni_range = 13.0
+    head_l.light_energy = 2.0
+    head_l.light_color = Color("#fff1c9")
+    head_l.visible = false
+    root.add_child(head_l)
+    var head_r := OmniLight3D.new()
+    head_r.position = Vector3(2.05,0.78,0.55)
+    head_r.omni_range = 13.0
+    head_r.light_energy = 2.0
+    head_r.light_color = Color("#fff1c9")
+    head_r.visible = false
+    root.add_child(head_r)
+    root.set_meta("headlights", [head_l, head_r])
+    return root
+
 func _local_box(root: Node3D, pos: Vector3, size: Vector3, mat: Material, collision: bool = false) -> void:
     var mesh := MeshInstance3D.new()
     var box := BoxMesh.new()
@@ -366,6 +388,26 @@ func _local_box(root: Node3D, pos: Vector3, size: Vector3, mat: Material, collis
         cs.shape = shape
         body.add_child(cs)
         root.add_child(body)
+
+func _make_traffic() -> void:
+    var routes := [
+        {"axis":"x", "z":28.0, "from":-175.0, "to":175.0, "speed":7.0},
+        {"axis":"x", "z":-58.0, "from":-110.0, "to":110.0, "speed":5.8},
+        {"axis":"z", "x":-62.0, "from":-110.0, "to":125.0, "speed":6.4},
+        {"axis":"z", "x":66.0, "from":-90.0, "to":105.0, "speed":6.0}
+    ]
+    var colors := [Color("#d7d2c8"),Color("#294e78"),Color("#a52f2f"),Color("#30343a"),Color("#6c5737")]
+    for i in range(12):
+        var r: Dictionary = routes[i % routes.size()]
+        var t := float(i) / 12.0
+        var car: Node3D
+        if r["axis"] == "x":
+            var x: float = lerp(float(r["from"]), float(r["to"]), t)
+            car = _make_car(Vector3(x,0.45,float(r["z"])), colors[i % colors.size()], 0.0)
+        else:
+            var z: float = lerp(float(r["from"]), float(r["to"]), t)
+            car = _make_car(Vector3(float(r["x"]),0.45,z), colors[i % colors.size()], PI/2.0)
+        traffic.append({"node":car,"route":r,"phase":t,"speed":float(r["speed"]) * rng.randf_range(0.82,1.15)})
 
 func _make_cars() -> void:
     _make_car(Vector3(-32,0.45,29), Color("#b92c2c"), 0.0)
@@ -425,6 +467,25 @@ func _make_landmarks() -> void:
         for z in [-3.8,3.8]:
             _box(Vector3(22+x,2.5,-5+z), Vector3(0.3,5,0.3), _mat(Color("#5b3d29"),0.96), false)
 
+func _make_city_props() -> void:
+    # Crosswalks and lane separators
+    for x in range(-155,156,18):
+        for i in range(6):
+            _box(Vector3(x + i*1.5 - 3.75,0.29,23.0), Vector3(0.95,0.035,3.2), _mat(Color("#e7e4d7"),0.72), false)
+    # Traffic lights at the main intersection
+    for p in [Vector3(-6,0,28),Vector3(6,0,28),Vector3(0,0,21),Vector3(0,0,35)]:
+        _box(p+Vector3(0,2.3,0),Vector3(0.18,4.6,0.18),_mat(Color("#202326"),0.58,0.08),false)
+        _box(p+Vector3(0,4.35,0),Vector3(0.52,0.95,0.38),_mat(Color("#17191a"),0.55),false)
+    # Rooftop AC units / vents for visual detail
+    for p in [Vector3(-52,18,-24),Vector3(-14,14,-24),Vector3(25,16,-24),Vector3(64,12,-24),Vector3(-52,18,66),Vector3(25,16,66)]:
+        _box(p+Vector3(0,0.55,0),Vector3(1.5,1.1,1.1),_mat(Color("#c4c4bd"),0.72,0.08),false)
+        _box(p+Vector3(0,1.15,0),Vector3(0.95,0.08,0.7),_mat(Color("#686d6d"),0.85),false)
+    # Park benches near the lake
+    for x in [-5.0, 12.0, 29.0]:
+        _box(Vector3(x,0.65,-36),Vector3(3.0,0.18,0.55),_mat(Color("#6b4930"),0.82),false)
+        for leg_x in [-1.0,1.0]:
+            _box(Vector3(x+leg_x,0.28,-36),Vector3(0.14,0.75,0.14),_mat(Color("#303234"),0.62,0.15),false)
+
 func _setup_weather_particles() -> void:
     rain_particles = _weather_particles(false)
     snow_particles = _weather_particles(true)
@@ -470,6 +531,27 @@ func _process(delta: float) -> void:
         var radius: float = npc_data["radius"]
         n.position = base + Vector3(cos(t*0.45+phase)*radius,0.05,sin(t*0.45+phase)*radius)
         n.rotation.y = -atan2(sin(t*0.45+phase),cos(t*0.45+phase))
+        n.position.y = 0.05 + abs(sin(t*3.2+phase))*0.025
+
+    for data in traffic:
+        var car: Node3D = data["node"]
+        var route: Dictionary = data["route"]
+        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * delta / (float(route["to"]) - float(route["from"])), 1.0)
+        if route["axis"] == "x":
+            car.position.x = lerp(float(route["from"]), float(route["to"]), phase)
+            car.position.z = float(route["z"])
+        else:
+            car.position.z = lerp(float(route["from"]), float(route["to"]), phase)
+            car.position.x = float(route["x"])
+        data["phase"] = phase
+        var lights: Array = car.get_meta("headlights")
+        var night := time_of_day < 6.0 or time_of_day > 18.3
+        for light in lights:
+            light.visible = night
+
+    var night := time_of_day < 6.0 or time_of_day > 18.3
+    for lamp in street_lamps:
+        lamp.visible = night
 
 func set_weather(kind: String) -> void:
     weather = kind
