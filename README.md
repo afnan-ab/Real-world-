@@ -1,17 +1,24 @@
-# Real World Open World — Mobile Prototype
+# Real World Open World — Realistic Style v3
 
-Godot 4.5 prototype designed for a GitHub + Termux workflow.
+This build keeps the original Godot 4.4.1 procedural project but replaces the simple prototype look with a stronger realistic-style pass.
 
-## Current build
-- 3D open world prototype
-- mountains, forests, lake, roads, cabin and lookout
-- day/night lighting
-- clear/rain/snow weather controls
-- touch joystick + WASD
-- Android ARM64 export preset
-- GitHub Actions APK build
+### Added
+- richer terrain color variation
+- improved sky, fog, filmic tone mapping and sun shadows
+- lake surface and water highlights
+- denser forests and more detailed trees
+- roads with sidewalks and lane markings
+- multi-floor buildings with windows and entrances
+- streetlights
+- modeled parked cars with wheels, glass, lights and metallic materials
+- pedestrians moving around the city
+- improved player proportions, hair, shoes and movement bob
+- smoother third-person camera framing
+- rain and snow particle effects
+- in-game clock and cleaner mobile HUD
 
-## Build
-Push this repository to GitHub. The workflow in `.github/workflows/android.yml` builds an APK and uploads it as a workflow artifact.
+### Important
+This is still a procedural mobile game prototype. It is **not GTA VI-level production graphics**: achieving that level requires professional character/vehicle/environment assets, animation, audio, streaming, advanced shaders, LODs and much more. This version is the next visual foundation for that direction.
 
-This is a prototype foundation, not a finished photorealistic AAA game. The next iterations should replace procedural placeholder geometry with optimized original PBR assets, terrain streaming, LODs, vegetation instancing, vehicles, NPCs, missions and save data.
+### Build
+The included GitHub Actions workflow exports the Android APK and uploads it as the `real-world-open-world-apk` artifact.
