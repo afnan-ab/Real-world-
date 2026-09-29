@@ -19,49 +19,51 @@ jobs:
           version: 4.4.1
           use-dotnet: false
 
-      - name: Install Godot Android export templates
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Godot export templates
         run: |
           mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
           wget -q \
-            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" \
             -O /tmp/templates.tpz
+          rm -rf /tmp/godot-templates
+          mkdir -p /tmp/godot-templates
           unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+          find /tmp/godot-templates -type f -maxdepth 3
           cp -f /tmp/godot-templates/templates/* \
             "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
 
-      - name: Verify templates
+      - name: Verify Android environment
         run: |
-          ls -lh "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
-          test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
-          test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
-
-      - name: Diagnose Android environment
-        run: |
-          set +e
-
-          echo "===== GODOT ====="
-          godot --version
-
           echo "===== JAVA ====="
           java -version
 
-          echo "===== ANDROID VARIABLES ====="
+          echo "===== ANDROID SDK ====="
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
 
+          echo "===== ADB ====="
+          adb version
+
+          echo "===== APKSIGNER ====="
+          which apksigner || true
+          apksigner version || true
+
           echo "===== GODOT TEMPLATES ====="
-          find "$HOME/.local/share/godot/export_templates" -maxdepth 3 -type f -print 2>/dev/null
+          ls -lh "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
 
-          echo "===== SDK SEARCH ====="
-          find "$ANDROID_HOME" -maxdepth 3 -type f \( -name adb -o -name apksigner \) -print 2>/dev/null
+          test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
+          test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
 
-          echo "===== GODOT IMPORT ====="
+      - name: Import project
+        run: |
           godot --headless --path . --editor --quit
-
-          echo "===== ANDROID EXPORT CHECK ====="
-          godot --headless --path . --export-release "Android" /tmp/RealWorld-V5-test.apk
-
-          echo "===== END DIAGNOSTIC ====="
 
       - name: Build Android APK
         run: |
