@@ -35,9 +35,33 @@ jobs:
           test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
           test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_release.apk"
 
-      - name: Import project
+      - name: Diagnose Android environment
         run: |
+          set +e
+
+          echo "===== GODOT ====="
+          godot --version
+
+          echo "===== JAVA ====="
+          java -version
+
+          echo "===== ANDROID VARIABLES ====="
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+
+          echo "===== GODOT TEMPLATES ====="
+          find "$HOME/.local/share/godot/export_templates" -maxdepth 3 -type f -print 2>/dev/null
+
+          echo "===== SDK SEARCH ====="
+          find "$ANDROID_HOME" -maxdepth 3 -type f \( -name adb -o -name apksigner \) -print 2>/dev/null
+
+          echo "===== GODOT IMPORT ====="
           godot --headless --path . --editor --quit
+
+          echo "===== ANDROID EXPORT CHECK ====="
+          godot --headless --path . --export-release "Android" /tmp/RealWorld-V5-test.apk
+
+          echo "===== END DIAGNOSTIC ====="
 
       - name: Build Android APK
         run: |
