@@ -34,3 +34,12 @@ The included GitHub Actions workflow exports the Android APK and uploads it as t
 - Cinematic third-person camera smoothing
 
 This remains a procedural game foundation; photoreal AAA fidelity requires authored high-resolution assets, animation, audio, advanced shaders and world streaming.
+
+
+## Realistic Living City v5
+- Civic landmarks: hospital, police HQ, fire station and bank
+- Waterfront marina with pier, boats and shoreline props
+- Job/location markers for city services, marina and park
+- Mobile HUD with city minimap, civic markers and wanted indicator
+- Touch sprint control in addition to the existing virtual joystick
+- Keeps the procedural, mobile-friendly Godot architecture so the project stays lightweight
