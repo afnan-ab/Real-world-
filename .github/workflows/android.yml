@@ -1,4 +1,5 @@
 name: Build Android APK
+# Debug APK verification uses ZIP integrity; no release signature is required.
 
 on:
   workflow_dispatch:
