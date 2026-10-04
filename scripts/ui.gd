@@ -77,6 +77,7 @@ func _build_ui() -> void:
 
     _build_minimap()
     _build_jobs_panel()
+    _build_sprint_button()
     var hint := _label("TOUCH / WASD  •  EXPLORE",Vector2(28,686),15)
     hint.modulate = Color(1,1,1,0.72)
 
@@ -116,6 +117,17 @@ func _build_jobs_panel() -> void:
     _label("AVAILABLE LOCATIONS",Vector2(888,500),16)
     job_label=_label("CITY HOSPITAL\nPOLICE HQ\nFIRE STATION\nBANK  •  MARINA",Vector2(888,528),14)
     job_label.add_theme_color_override("font_color",Color("#dce5e4"))
+
+
+func _build_sprint_button() -> void:
+    var b := Button.new()
+    b.text = "SPRINT"
+    b.position = Vector2(1060,650)
+    b.size = Vector2(110,48)
+    b.add_theme_font_size_override("font_size",16)
+    add_child(b)
+    b.button_down.connect(func(): player.set_sprint(true))
+    b.button_up.connect(func(): player.set_sprint(false))
 
 func _process(_delta: float) -> void:
     if world and clock_label:
