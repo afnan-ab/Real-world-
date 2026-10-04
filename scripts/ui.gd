@@ -8,6 +8,9 @@ var joystick := Vector2.ZERO
 var knob: ColorRect
 var weather_label: Label
 var clock_label: Label
+var location_label: Label
+var wanted_label: Label
+var job_label: Label
 
 func _ready() -> void:
     player = get_parent().get_node("Player")
@@ -47,6 +50,10 @@ func _build_ui() -> void:
     weather_label = _label("WEATHER  •  CLEAR",Vector2(34,88),14)
     clock_label = _label("08:00",Vector2(302,28),17)
 
+    location_label = _label("DOWNTOWN",Vector2(470,24),18)
+    wanted_label = _label("● WANTED  0",Vector2(470,52),15)
+    wanted_label.add_theme_color_override("font_color",Color("#f0d58a"))
+
     _panel(Vector2(1020,20),Vector2(138,174),0.28)
     var clear := _button("☀  Clear",Vector2(1031,31))
     clear.pressed.connect(func(): world.set_weather("clear"); weather_label.text="WEATHER  •  CLEAR")
@@ -68,8 +75,47 @@ func _build_ui() -> void:
     knob.color = Color(0.9,0.95,0.95,0.35)
     add_child(knob)
 
+    _build_minimap()
+    _build_jobs_panel()
     var hint := _label("TOUCH / WASD  •  EXPLORE",Vector2(28,686),15)
     hint.modulate = Color(1,1,1,0.72)
+
+
+func _build_minimap() -> void:
+    _panel(Vector2(1000,250),Vector2(250,185),0.30)
+    _label("CITY MAP",Vector2(1018,262),15)
+    var map_bg := ColorRect.new()
+    map_bg.position=Vector2(1015,287)
+    map_bg.size=Vector2(220,130)
+    map_bg.color=Color(0.06,0.09,0.10,0.88)
+    add_child(map_bg)
+    # Main roads.
+    var road_h:=ColorRect.new()
+    road_h.position=Vector2(1025,342); road_h.size=Vector2(200,8)
+    road_h.color=Color("#6e7476"); add_child(road_h)
+    var road_v:=ColorRect.new()
+    road_v.position=Vector2(1110,296); road_v.size=Vector2(8,112)
+    road_v.color=Color("#6e7476"); add_child(road_v)
+    # Lake.
+    var lake:=ColorRect.new()
+    lake.position=Vector2(1160,300); lake.size=Vector2(60,38)
+    lake.color=Color("#1b6677"); add_child(lake)
+    # Player marker.
+    var player_dot:=ColorRect.new()
+    player_dot.position=Vector2(1111,338); player_dot.size=Vector2(7,7)
+    player_dot.color=Color("#f4d35e"); add_child(player_dot)
+    # Civic markers.
+    for p in [Vector2(1060,325),Vector2(1165,325),Vector2(1060,375),Vector2(1165,375)]:
+        var dot:=ColorRect.new()
+        dot.position=p; dot.size=Vector2(6,6)
+        dot.color=Color("#d66a61"); add_child(dot)
+    _label("● YOU   ● CIVIC   ▰ LAKE",Vector2(1020,418),11)
+
+func _build_jobs_panel() -> void:
+    _panel(Vector2(870,490),Vector2(300,150),0.28)
+    _label("AVAILABLE LOCATIONS",Vector2(888,500),16)
+    job_label=_label("CITY HOSPITAL\nPOLICE HQ\nFIRE STATION\nBANK  •  MARINA",Vector2(888,528),14)
+    job_label.add_theme_color_override("font_color",Color("#dce5e4"))
 
 func _process(_delta: float) -> void:
     if world and clock_label:
