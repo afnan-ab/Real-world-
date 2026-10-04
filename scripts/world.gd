@@ -26,6 +26,9 @@ func _ready() -> void:
     _make_traffic()
     _make_pedestrians()
     _make_landmarks()
+    _make_service_buildings()
+    _make_waterfront()
+    _make_job_locations()
     _make_city_props()
     _setup_weather_particles()
 
@@ -514,6 +517,75 @@ func _weather_particles(snow: bool) -> GPUParticles3D:
     particles.draw_pass_1 = mesh
     add_child(particles)
     return particles
+
+
+func _make_sign(pos: Vector3, text_value: String, color: Color) -> void:
+    var post := _box(pos + Vector3(0,1.2,0), Vector3(0.10,2.4,0.10), _mat(Color("#2a2d2f"),0.7), false)
+    var sign := _box(pos + Vector3(0,2.45,0), Vector3(2.8,0.85,0.10), _mat(color,0.68), false)
+    sign.set_meta("label", text_value)
+
+func _make_service_buildings() -> void:
+    # Civic district: hospital, police, fire and bank landmarks.
+    var civic := [
+        {"p":Vector3(-42,0,-6),"s":Vector3(22,9,16),"c":Color("#d8d6d0"),"sign":"HOSPITAL"},
+        {"p":Vector3(38,0,-6),"s":Vector3(20,8,15),"c":Color("#596b78"),"sign":"POLICE"},
+        {"p":Vector3(-42,0,78),"s":Vector3(20,7,15),"c":Color("#a34b3e"),"sign":"FIRE STATION"},
+        {"p":Vector3(38,0,78),"s":Vector3(18,10,14),"c":Color("#75624b"),"sign":"BANK"}
+    ]
+    for d in civic:
+        _make_building(d["p"],d["s"],d["c"],max(1,int(d["s"].y/4.0)))
+        _make_sign(d["p"] + Vector3(0,d["s"].y + 0.05,d["s"].z/2 + 0.5),d["sign"],Color("#1d3542"))
+
+    # Hospital entrance canopy and emergency bays.
+    for x in [-47.0,-42.0,-37.0]:
+        _box(Vector3(x,0.35,3.0),Vector3(3.8,0.25,6.0),_mat(Color("#d8d6d0"),0.65),false)
+    _box(Vector3(-42,3.2,2.7),Vector3(16,0.35,6),_mat(Color("#f2f0ea"),0.55),false)
+
+    # Fire-station garage doors.
+    for x in [-47.0,-42.0,-37.0]:
+        _box(Vector3(x,2.0,85.55),Vector3(3.8,3.2,0.12),_mat(Color("#262b2e"),0.35,0.2),false)
+
+func _make_boat(pos: Vector3, scale_v: float = 1.0, rotation_y: float = 0.0) -> void:
+    var boat := Node3D.new()
+    boat.position = pos
+    boat.rotation.y = rotation_y
+    boat.scale = Vector3.ONE * scale_v
+    add_child(boat)
+    var hull := _mat(Color("#e8e2d6"),0.28,0.25)
+    var dark := _mat(Color("#27313a"),0.38,0.3)
+    var glass := _mat(Color("#31566a"),0.10,0.42)
+    _local_box(boat,Vector3(0,0,0),Vector3(5.8,0.55,1.7),hull,false)
+    _local_box(boat,Vector3(0,0.45,0),Vector3(2.5,0.65,1.35),dark,false)
+    _local_box(boat,Vector3(0,0.8,0),Vector3(1.55,0.42,1.15),glass,false)
+    _local_box(boat,Vector3(-1.75,0.62,0),Vector3(0.10,1.5,0.10),dark,false)
+
+func _make_waterfront() -> void:
+    # Marina pier, bollards and leisure boats at the lake.
+    _box(Vector3(78,0.65,-75),Vector3(48,0.35,4.2),_mat(Color("#6c5239"),0.88),false)
+    for x in range(57,101,6):
+        _box(Vector3(x,0.75,-73.0),Vector3(0.35,1.2,0.35),_mat(Color("#3b2c23"),0.9),false)
+    _make_boat(Vector3(62,0.55,-80),0.85,-0.35)
+    _make_boat(Vector3(82,0.55,-83),1.0,0.25)
+    _make_boat(Vector3(102,0.55,-77),0.72,-0.15)
+    for x in [52.0,67.0,91.0,108.0]:
+        _box(Vector3(x,0.18,-68),Vector3(0.55,0.25,0.55),_mat(Color("#b7a27d"),0.92),false)
+
+func _make_job_locations() -> void:
+    # Lightweight location metadata used by the HUD/interactions.
+    var jobs := [
+        {"name":"CITY HOSPITAL","pos":Vector3(-42,0,-6)},
+        {"name":"POLICE HQ","pos":Vector3(38,0,-6)},
+        {"name":"FIRE STATION","pos":Vector3(-42,0,78)},
+        {"name":"BANK","pos":Vector3(38,0,78)},
+        {"name":"MARINA","pos":Vector3(78,0,-75)},
+        {"name":"PARK","pos":Vector3(10,0,-36)}
+    ]
+    for j in jobs:
+        var marker := Marker3D.new()
+        marker.position = j["pos"] + Vector3(0,0.15,0)
+        marker.name = String(j["name"]).replace(" ","_")
+        marker.set_meta("job_location",j["name"])
+        add_child(marker)
 
 func _process(delta: float) -> void:
     time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
