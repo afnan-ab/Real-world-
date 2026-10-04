@@ -278,7 +278,7 @@ func _make_building(pos: Vector3, size: Vector3, color: Color, floors: int = 2) 
     var frame := _mat(Color("#2b2d2f"), 0.65)
     var window_rows := max(1, floors)
     for row in range(window_rows):
-        var y := 2.0 + row * (size.y / float(window_rows))
+        var y: float = 2.0 + row * (size.y / float(window_rows))
         for x in range(-int(size.x/2)+2, int(size.x/2)-1, 3):
             _box(pos + Vector3(x,y,size.z/2+0.025), Vector3(1.45,1.25,0.07), glass, false)
             _box(pos + Vector3(x,y,size.z/2+0.065), Vector3(1.58,0.08,0.06), frame, false)
