@@ -10,6 +10,10 @@ var camera: Camera3D
 var walk_time: float = 0.0
 var camera_target: Vector3
 var sprint_touch := false
+var camera_yaw: float = 0.0
+var camera_pitch: float = -0.18
+@export var look_sensitivity: float = 0.012
+@export var camera_distance: float = 7.8
 
 func _ready() -> void:
     var capsule := CapsuleShape3D.new()
@@ -17,7 +21,10 @@ func _ready() -> void:
     capsule.height = 1.8
     $CollisionShape3D.shape = capsule
     camera = $CameraPivot/Camera3D
-    camera_target = camera.position
+    camera_target = Vector3(0.0, 3.0, camera_distance)
+    camera.position = camera_target
+    $CameraPivot.rotation.y = camera_yaw
+    $CameraPivot.rotation.x = camera_pitch
     _build_human()
 
 func _build_human() -> void:
@@ -67,13 +74,31 @@ func set_joystick(v: Vector2) -> void:
 func set_sprint(enabled: bool) -> void:
     sprint_touch = enabled
 
+func look_camera(delta_screen: Vector2) -> void:
+    camera_yaw -= delta_screen.x * look_sensitivity
+    camera_pitch = clamp(camera_pitch - delta_screen.y * look_sensitivity, -0.55, 0.20)
+    $CameraPivot.rotation.y = camera_yaw
+    $CameraPivot.rotation.x = camera_pitch
+
+func reset_camera_look() -> void:
+    camera_yaw = 0.0
+    camera_pitch = -0.18
+    $CameraPivot.rotation.y = camera_yaw
+    $CameraPivot.rotation.x = camera_pitch
+
 func _physics_process(delta: float) -> void:
     var input_vec := Input.get_vector("move_left","move_right","move_forward","move_back")
     if joystick.length() > 0.08:
         input_vec = joystick
 
-    var dir := Vector3(input_vec.x,0,input_vec.y)
-    if dir.length() > 1.0:
+    # GTA-style movement: the left stick moves relative to the camera direction.
+    var local_dir := Vector3(input_vec.x, 0.0, input_vec.y)
+    if local_dir.length() > 1.0:
+        local_dir = local_dir.normalized()
+    var dir := Vector3.ZERO
+    if local_dir.length() > 0.08:
+        dir = global_transform.basis * local_dir
+        dir.y = 0.0
         dir = dir.normalized()
 
     var current_speed := sprint_speed if (Input.is_action_pressed("ui_accept") or sprint_touch) else speed
@@ -81,7 +106,7 @@ func _physics_process(delta: float) -> void:
     velocity.z = move_toward(velocity.z, dir.z * current_speed, acceleration * delta)
 
     if dir.length() > 0.08:
-        var yaw := atan2(dir.x,dir.z)
+            var yaw := atan2(dir.x,dir.z)
         visual.rotation.y = lerp_angle(visual.rotation.y,yaw,min(1.0,delta*9.0))
         walk_time += delta * (8.0 if current_speed > speed else 5.0)
         visual.position.y = 0.9 + sin(walk_time) * 0.035
@@ -95,5 +120,6 @@ func _physics_process(delta: float) -> void:
         velocity.y = 0.0
     move_and_slide()
 
-    # Smooth third-person camera follow for a more cinematic feel.
-    camera.position = camera.position.lerp(camera_target, min(1.0, delta * 5.5))
+    # Smooth third-person camera follow; look direction is controlled by the right stick/drag.
+    camera_target = Vector3(0.0, 3.0, camera_distance)
+    camera.position = camera.position.lerp(camera_target, min(1.0, delta * 7.0))
