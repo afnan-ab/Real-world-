@@ -14,13 +14,13 @@ script = ExtResource("2")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 
 [node name="CameraPivot" type="Node3D" parent="Player"]
-position = Vector3(0, 1.4, 0)
+position = Vector3(0, 1.0, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Player/CameraPivot"]
-position = Vector3(0, 3.0, 7.8)
-rotation_degrees = Vector3(-16, 0, 0)
+position = Vector3(0, 2.2, 6.2)
+rotation_degrees = Vector3(-10, 0, 0)
 current = true
-fov = 62.0
+fov = 68.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 script = ExtResource("3")
