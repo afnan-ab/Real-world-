@@ -97,7 +97,7 @@ func _physics_process(delta: float) -> void:
         local_dir = local_dir.normalized()
     var dir := Vector3.ZERO
     if local_dir.length() > 0.08:
-        dir = global_transform.basis * local_dir
+        dir = Basis(Vector3.UP, camera_yaw) * local_dir
         dir.y = 0.0
         dir = dir.normalized()
 
