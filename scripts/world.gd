@@ -40,7 +40,7 @@ func _setup_environment() -> void:
     env.ambient_light_energy = 0.8
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-    env.glow_enabled = true
+    env.glow_enabled = false
     env.glow_intensity = 0.65
     env.glow_strength = 1.15
     env.fog_enabled = true
@@ -66,7 +66,7 @@ func _setup_environment() -> void:
     sun.light_color = Color("#fff4df")
     sun.light_energy = 1.45
     sun.shadow_enabled = true
-    sun.directional_shadow_max_distance = 125.0
+    sun.directional_shadow_max_distance = 90.0
     sun.directional_shadow_fade_start = 0.75
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
     add_child(sun)
@@ -248,7 +248,7 @@ func _make_tree(pos: Vector3, s: float = 1.0) -> void:
         root.add_child(crown)
 
 func _make_forests() -> void:
-    for i in range(300):
+    for i in range(150):
         var p := Vector3(rng.randf_range(-205,205), 0, rng.randf_range(-205,205))
         if p.length() < 54.0:
             continue
@@ -400,7 +400,7 @@ func _make_traffic() -> void:
         {"axis":"z", "x":66.0, "from":-90.0, "to":105.0, "speed":6.0}
     ]
     var colors := [Color("#d7d2c8"),Color("#294e78"),Color("#a52f2f"),Color("#30343a"),Color("#6c5737")]
-    for i in range(12):
+    for i in range(8):
         var r: Dictionary = routes[i % routes.size()]
         var t := float(i) / 12.0
         var car: Node3D
@@ -458,8 +458,8 @@ func _local_person_part(root: Node3D, pos: Vector3, scale_v: Vector3, mat: Mater
 
 func _make_pedestrians() -> void:
     var shirt_colors := [Color("#345f8a"),Color("#8a3f3f"),Color("#557b4a"),Color("#8c6b3e"),Color("#5d4f86")]
-    for i in range(8):
-        var start := Vector3(-70 + i * 18, 0.05, 19 + (i % 2) * 18)
+    for i in range(5):
+        var start := Vector3(-55 + i * 22, 0.05, 19 + (i % 2) * 18)
         var person := _make_person(start, shirt_colors[i % shirt_colors.size()], rng.randf_range(0.92,1.06))
         npcs.append({"node":person, "base":start, "phase":rng.randf_range(0.0,TAU), "radius":rng.randf_range(2.0,5.0)})
 
@@ -497,12 +497,12 @@ func _setup_weather_particles() -> void:
 
 func _weather_particles(snow: bool) -> GPUParticles3D:
     var particles := GPUParticles3D.new()
-    particles.amount = 420 if snow else 700
-    particles.lifetime = 2.4 if snow else 0.8
-    particles.visibility_aabb = AABB(Vector3(-80,-5,-80),Vector3(160,55,160))
+    particles.amount = 120 if snow else 220
+    particles.lifetime = 2.0 if snow else 0.65
+    particles.visibility_aabb = AABB(Vector3(-55,-3,-55),Vector3(110,42,110))
     var process := ParticleProcessMaterial.new()
     process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-    process.emission_box_extents = Vector3(65,18,65)
+    process.emission_box_extents = Vector3(48,15,48)
     process.direction = Vector3(0,-1,0)
     process.initial_velocity_min = 2.0 if snow else 26.0
     process.initial_velocity_max = 4.5 if snow else 34.0
