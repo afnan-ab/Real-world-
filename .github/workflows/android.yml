@@ -83,14 +83,21 @@ jobs:
 
           p = Path("export_presets.cfg")
           s = p.read_text()
-
           s = s.replace(
               'keystore/release_password="__GITHUB_KEYSTORE_PASSWORD__"',
               'keystore/release_password="' + os.environ["KEYSTORE_PASSWORD"] + '"'
           )
-
           p.write_text(s)
           PY
+
+      - name: Validate Godot project
+        run: |
+          ./Godot_v4.4.1-stable_linux.x86_64 \
+            --headless \
+            --editor \
+            --path . \
+            --quit \
+            --verbose
 
       - name: Export signed Android APK
         run: |
