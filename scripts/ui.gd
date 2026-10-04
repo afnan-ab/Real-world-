@@ -11,6 +11,9 @@ var knob: Panel
 var joystick_base: Panel
 var sprint_button: Button
 var action_button: Button
+var jump_button: Button
+var joy_center := Vector2(129,587)
+var viewport_size := Vector2(1280,720)
 var weather_label: Label
 var clock_label: Label
 var location_label: Label
@@ -20,6 +23,7 @@ var job_label: Label
 func _ready() -> void:
     player = get_parent().get_node("Player")
     world = get_parent()
+    viewport_size = get_viewport().get_visible_rect().size
     _build_ui()
 
 func _label(text: String, pos: Vector2, size: int = 20) -> Label:
@@ -92,7 +96,8 @@ func _build_ui() -> void:
     _build_jobs_panel()
     _build_sprint_button()
     _build_action_button()
-    _label("LOOK",Vector2(1050,570),13).modulate = Color(1,1,1,0.42)
+    _build_jump_button()
+    _label("DRAG TO LOOK",Vector2(1050,570),13).modulate = Color(1,1,1,0.42)
     var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),15)
     hint.modulate = Color(1,1,1,0.72)
 
@@ -134,14 +139,34 @@ func _build_jobs_panel() -> void:
     job_label.add_theme_color_override("font_color",Color("#dce5e4"))
 
 
+func _circle_button(text: String, center: Vector2, size: float) -> Button:
+    var b := Button.new()
+    b.text = text
+    b.position = center - Vector2(size * 0.5, size * 0.5)
+    b.size = Vector2(size, size)
+    b.pivot_offset = Vector2(size * 0.5, size * 0.5)
+    b.add_theme_font_size_override("font_size", 16)
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color(0.04,0.06,0.08,0.70)
+    normal.border_width_left = 2
+    normal.border_width_top = 2
+    normal.border_width_right = 2
+    normal.border_width_bottom = 2
+    normal.border_color = Color(0.80,0.88,0.92,0.50)
+    normal.corner_radius_top_left = int(size * 0.5)
+    normal.corner_radius_top_right = int(size * 0.5)
+    normal.corner_radius_bottom_left = int(size * 0.5)
+    normal.corner_radius_bottom_right = int(size * 0.5)
+    var pressed := normal.duplicate()
+    pressed.bg_color = Color(0.18,0.28,0.32,0.92)
+    b.add_theme_stylebox_override("normal", normal)
+    b.add_theme_stylebox_override("hover", normal)
+    b.add_theme_stylebox_override("pressed", pressed)
+    add_child(b)
+    return b
+
 func _build_sprint_button() -> void:
-    sprint_button = Button.new()
-    sprint_button.text = "SPRINT"
-    sprint_button.position = Vector2(1060,650)
-    sprint_button.size = Vector2(110,48)
-    sprint_button.pivot_offset = sprint_button.size * 0.5
-    sprint_button.add_theme_font_size_override("font_size",16)
-    add_child(sprint_button)
+    sprint_button = _circle_button("RUN", Vector2(1120,650), 82)
     sprint_button.button_down.connect(func():
         player.set_sprint(true)
         _press_anim(sprint_button)
@@ -152,26 +177,29 @@ func _build_sprint_button() -> void:
     )
 
 func _build_action_button() -> void:
-    action_button = Button.new()
-    action_button.text = "ACTION"
-    action_button.position = Vector2(1175,650)
-    action_button.size = Vector2(85,48)
-    action_button.pivot_offset = action_button.size * 0.5
-    action_button.add_theme_font_size_override("font_size",14)
-    add_child(action_button)
+    action_button = _circle_button("ACT", Vector2(1215,590), 70)
     action_button.button_down.connect(func(): _press_anim(action_button))
     action_button.button_up.connect(func(): _release_anim(action_button))
     action_button.pressed.connect(func(): player.reset_camera_look())
 
+func _build_jump_button() -> void:
+    jump_button = _circle_button("JUMP", Vector2(1215,680), 74)
+    jump_button.button_down.connect(func():
+        _press_anim(jump_button)
+        if player.is_on_floor():
+            player.velocity.y = 7.0
+    )
+    jump_button.button_up.connect(func(): _release_anim(jump_button))
+
 func _press_anim(control: Control) -> void:
     var t := create_tween()
     t.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-    t.tween_property(control, "scale", Vector2(0.90,0.90), 0.08)
+    t.tween_property(control, "scale", Vector2(0.88,0.88), 0.07)
 
 func _release_anim(control: Control) -> void:
     var t := create_tween()
     t.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-    t.tween_property(control, "scale", Vector2.ONE, 0.16)
+    t.tween_property(control, "scale", Vector2.ONE, 0.15)
 
 func _process(_delta: float) -> void:
     if world and clock_label:
@@ -180,33 +208,50 @@ func _process(_delta: float) -> void:
         var m := int((hour - h) * 60.0)
         clock_label.text = "%02d:%02d" % [h,m]
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+    # Read touch before CanvasLayer controls consume it.
     if event is InputEventScreenTouch:
-        if event.position.x < 240 and event.position.y > 470:
+        var pos := event.position
+        if pos.x < 330.0 and pos.y > 430.0:
             dragging = event.pressed
             if dragging:
-                joystick_center = Vector2(129,587)
+                joystick_center = joy_center
                 _joystick_touch_anim(true)
             else:
                 joystick = Vector2.ZERO
-                player.set_joystick(joystick)
+                player.set_joystick(Vector2.ZERO)
                 _joystick_touch_anim(false)
-        elif event.position.x > 760 and event.position.y > 210:
+            get_viewport().set_input_as_handled()
+            return
+
+        # Right half is the free camera-look area; avoid the top HUD.
+        if pos.x > 700.0 and pos.y > 210.0 and pos.y < 690.0:
             look_dragging = event.pressed
             if look_dragging:
-                look_last = event.position
+                look_last = pos
+            get_viewport().set_input_as_handled()
+            return
 
     elif event is InputEventScreenDrag:
         if dragging:
             var v: Vector2 = (event.position - joystick_center) / 72.0
-            joystick = Vector2(clamp(v.x,-1.0,1.0),clamp(v.y,-1.0,1.0))
+            joystick = Vector2(clamp(v.x,-1.0,1.0), clamp(v.y,-1.0,1.0))
             player.set_joystick(joystick)
             if knob:
                 knob.position = joystick_center + joystick * 48.0 - Vector2(25,25)
+            get_viewport().set_input_as_handled()
         elif look_dragging:
             var delta_look: Vector2 = event.position - look_last
             player.look_camera(delta_look)
             look_last = event.position
+            get_viewport().set_input_as_handled()
+
+func _process(_delta: float) -> void:
+    if world and clock_label:
+        var hour: float = world.time_of_day
+        var h := int(hour)
+        var m := int((hour - h) * 60.0)
+        clock_label.text = "%02d:%02d" % [h,m]
 
 
 func _joystick_touch_anim(active: bool) -> void:
@@ -224,4 +269,4 @@ func _joystick_touch_anim(active: bool) -> void:
         t.tween_property(joystick_base, "scale", Vector2.ONE, 0.18)
         t.tween_property(knob, "scale", Vector2.ONE, 0.16)
         t.tween_property(joystick_base, "modulate", Color(1,1,1,0.72), 0.16)
-        t.chain().tween_property(knob, "position", Vector2(104,562), 0.16)
+        t.chain().tween_property(knob, "position", joy_center - Vector2(25,25), 0.16)
