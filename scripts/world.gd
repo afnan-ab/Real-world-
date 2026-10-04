@@ -105,7 +105,7 @@ func _height(x: float, z: float) -> float:
     var d := Vector2(x, z).length()
     if d < 58.0:
         return 0.0
-    var h := sin(x * 0.026) * 3.0
+    var h: float = sin(x * 0.026) * 3.0
     h += cos(z * 0.031) * 2.6
     h += sin((x + z) * 0.017) * 3.8
     h += sin(x * 0.083 + z * 0.024) * 0.7
