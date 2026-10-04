@@ -9,6 +9,7 @@ var visual: Node3D
 var camera: Camera3D
 var walk_time: float = 0.0
 var camera_target: Vector3
+var sprint_touch := false
 
 func _ready() -> void:
     var capsule := CapsuleShape3D.new()
@@ -63,6 +64,9 @@ func _mat(color: Color, rough: float = 0.8) -> StandardMaterial3D:
 func set_joystick(v: Vector2) -> void:
     joystick = v
 
+func set_sprint(enabled: bool) -> void:
+    sprint_touch = enabled
+
 func _physics_process(delta: float) -> void:
     var input_vec := Input.get_vector("move_left","move_right","move_forward","move_back")
     if joystick.length() > 0.08:
@@ -72,7 +76,7 @@ func _physics_process(delta: float) -> void:
     if dir.length() > 1.0:
         dir = dir.normalized()
 
-    var current_speed := sprint_speed if Input.is_action_pressed("ui_accept") else speed
+    var current_speed := sprint_speed if (Input.is_action_pressed("ui_accept") or sprint_touch) else speed
     velocity.x = move_toward(velocity.x, dir.x * current_speed, acceleration * delta)
     velocity.z = move_toward(velocity.z, dir.z * current_speed, acceleration * delta)
 
