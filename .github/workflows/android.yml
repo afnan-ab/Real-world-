@@ -84,6 +84,8 @@ jobs:
           unzip -q /tmp/godot_templates/templates/android_source.zip -d "$HOME/.local/share/godot/export_templates/4.4.1.stable" || true
           cp /tmp/godot_templates/templates/android_debug.apk "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
           cp /tmp/godot_templates/templates/android_release.apk "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          cp /tmp/godot_templates/templates/version.txt "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          ls -lah "$HOME/.local/share/godot/export_templates/4.4.1.stable"
 
       - name: Configure signing password
         env:
@@ -118,7 +120,8 @@ jobs:
             --headless \
             --path . \
             --export-debug Android \
-            build/real_world_open_world.apk
+            build/real_world_open_world.apk \
+            --verbose
 
       - name: Verify APK
         run: |
