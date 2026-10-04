@@ -246,13 +246,6 @@ func _input(event: InputEvent) -> void:
             look_last = event.position
             get_viewport().set_input_as_handled()
 
-func _process(_delta: float) -> void:
-    if world and clock_label:
-        var hour: float = world.time_of_day
-        var h := int(hour)
-        var m := int((hour - h) * 60.0)
-        clock_label.text = "%02d:%02d" % [h,m]
-
 
 func _joystick_touch_anim(active: bool) -> void:
     if not joystick_base or not knob:
