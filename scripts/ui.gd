@@ -148,7 +148,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 if knob:
                     knob.position = Vector2(104,562)
     elif event is InputEventScreenDrag and dragging:
-        var v := (event.position - joystick_center) / 72.0
+        var v: Vector2 = (event.position - joystick_center) / 72.0
         joystick = Vector2(clamp(v.x,-1.0,1.0),clamp(v.y,-1.0,1.0))
         player.set_joystick(joystick)
         if knob:
