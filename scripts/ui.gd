@@ -4,6 +4,8 @@ var player: Node
 var world: Node
 var joystick_center := Vector2.ZERO
 var dragging := false
+var look_dragging := false
+var look_last := Vector2.ZERO
 var joystick := Vector2.ZERO
 var knob: ColorRect
 var weather_label: Label
@@ -78,7 +80,9 @@ func _build_ui() -> void:
     _build_minimap()
     _build_jobs_panel()
     _build_sprint_button()
-    var hint := _label("TOUCH / WASD  •  EXPLORE",Vector2(28,686),15)
+    _build_action_button()
+    _label("LOOK",Vector2(1050,570),13).modulate = Color(1,1,1,0.42)
+    var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),15)
     hint.modulate = Color(1,1,1,0.72)
 
 
@@ -129,6 +133,15 @@ func _build_sprint_button() -> void:
     b.button_down.connect(func(): player.set_sprint(true))
     b.button_up.connect(func(): player.set_sprint(false))
 
+func _build_action_button() -> void:
+    var b := Button.new()
+    b.text = "ACTION"
+    b.position = Vector2(1175,650)
+    b.size = Vector2(85,48)
+    b.add_theme_font_size_override("font_size",14)
+    add_child(b)
+    b.pressed.connect(func(): player.reset_camera_look())
+
 func _process(_delta: float) -> void:
     if world and clock_label:
         var hour: float = world.time_of_day
@@ -147,9 +160,19 @@ func _unhandled_input(event: InputEvent) -> void:
                 player.set_joystick(joystick)
                 if knob:
                     knob.position = Vector2(104,562)
-    elif event is InputEventScreenDrag and dragging:
-        var v: Vector2 = (event.position - joystick_center) / 72.0
-        joystick = Vector2(clamp(v.x,-1.0,1.0),clamp(v.y,-1.0,1.0))
-        player.set_joystick(joystick)
-        if knob:
-            knob.position = joystick_center + joystick * 48.0 - Vector2(25,25)
+        elif event.position.x > 760 and event.position.y > 210:
+            look_dragging = event.pressed
+            if look_dragging:
+                look_last = event.position
+
+    elif event is InputEventScreenDrag:
+        if dragging:
+            var v: Vector2 = (event.position - joystick_center) / 72.0
+            joystick = Vector2(clamp(v.x,-1.0,1.0),clamp(v.y,-1.0,1.0))
+            player.set_joystick(joystick)
+            if knob:
+                knob.position = joystick_center + joystick * 48.0 - Vector2(25,25)
+        elif look_dragging:
+            var delta_look: Vector2 = event.position - look_last
+            player.look_camera(delta_look)
+            look_last = event.position
