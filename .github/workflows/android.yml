@@ -87,38 +87,6 @@ jobs:
           cp /tmp/godot_templates/templates/version.txt "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
           ls -lah "$HOME/.local/share/godot/export_templates/4.4.1.stable"
 
-      - name: Configure signing password
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-
-          p = Path("export_presets.cfg")
-          s = p.read_text()
-          s = s.replace(
-              'keystore/release_password="__GITHUB_KEYSTORE_PASSWORD__"',
-              'keystore/release_password="' + os.environ["KEYSTORE_PASSWORD"] + '"'
-          )
-          p.write_text(s)
-          PY
-
-      - name: Configure Godot Android paths
-        run: |
-          mkdir -p "$HOME/.config/godot"
-          cat > "$HOME/.config/godot/editor_settings-4.4.tres" <<EOF
-[gd_resource type="EditorSettings" format=3]
-
-[resource]
-export/android/android_sdk_path = "/usr/local/lib/android/sdk"
-export/android/java_sdk_path = "$JAVA_HOME_17_X64"
-EOF
-          echo "Godot Android SDK: $ANDROID_SDK_ROOT"
-          test -d "$ANDROID_SDK_ROOT/platform-tools"
-          test -d "$ANDROID_SDK_ROOT/build-tools/35.0.0"
-          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
-
       - name: Validate Godot project
         run: |
           ./Godot_v4.4.1-stable_linux.x86_64 \
