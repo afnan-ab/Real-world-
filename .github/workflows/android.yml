@@ -111,13 +111,13 @@ jobs:
             --quit \
             --verbose
 
-      - name: Export signed Android APK
+      - name: Export Android APK
         run: |
           mkdir -p build
           ./Godot_v4.4.1-stable_linux.x86_64 \
             --headless \
             --path . \
-            --export-release Android \
+            --export-debug Android \
             build/real_world_open_world.apk
 
       - name: Verify APK
