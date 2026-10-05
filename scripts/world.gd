@@ -139,6 +139,11 @@ func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = tru
     mesh.material_override = material
     mesh.position = pos
     mesh.visibility_range_end = 260.0
+    # Decorative props do not cast dynamic shadows; buildings/roads keep shadows.
+    if collision:
+        mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+    else:
+        mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mesh)
     if collision:
         var body := StaticBody3D.new()
