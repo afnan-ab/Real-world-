@@ -2,7 +2,6 @@
 
 [ext_resource path="res://scripts/world.gd" type="Script" id="1"]
 [ext_resource path="res://scripts/player.gd" type="Script" id="2"]
-[ext_resource path="res://scripts/ui.gd" type="Script" id="3"]
 [ext_resource path="res://scripts/hud_fallback.gd" type="Script" id="4"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jarvis"]
@@ -57,92 +56,7 @@ rotation_degrees = Vector3(-10, 0, 0)
 current = true
 fov = 68.0
 
-[node name="UI" type="CanvasLayer" parent="."]
-layer = 50
-script = ExtResource("3")
 
-[node name="HUDFallback" type="CanvasLayer" parent="."]
-layer = 100
-script = ExtResource("4")
-
-
-[node name="HUDStatic" type="CanvasLayer" parent="."]
+[node name="HUD" type="CanvasLayer" parent="."]
 layer = 200
-
-[node name="TopPanel" type="ColorRect" parent="HUDStatic"]
-offset_left = 18.0
-offset_top = 18.0
-offset_right = 378.0
-offset_bottom = 108.0
-color = Color(0.02, 0.04, 0.05, 0.82)
-mouse_filter = 2
-
-[node name="Title" type="Label" parent="HUDStatic/TopPanel"]
-offset_left = 14.0
-offset_top = 7.0
-offset_right = 340.0
-offset_bottom = 38.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 23
-text = "REAL WORLD"
-
-[node name="Sub" type="Label" parent="HUDStatic/TopPanel"]
-offset_left = 16.0
-offset_top = 43.0
-offset_right = 340.0
-offset_bottom = 70.0
-theme_override_colors/font_color = Color(0.72, 0.95, 0.82, 1)
-theme_override_font_sizes/font_size = 14
-text = "ONLINE  •  CITY  •  FREE ROAM"
-
-[node name="Wanted" type="Label" parent="HUDStatic"]
-offset_left = 470.0
-offset_top = 24.0
-offset_right = 800.0
-offset_bottom = 55.0
-theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
-theme_override_font_sizes/font_size = 18
-text = "WANTED  ☆ ☆ ☆ ☆ ☆"
-
-[node name="Vehicle" type="Label" parent="HUDStatic"]
-offset_left = 470.0
-offset_top = 82.0
-offset_right = 850.0
-offset_bottom = 110.0
-theme_override_colors/font_color = Color(0.94, 0.96, 0.95, 1)
-theme_override_font_sizes/font_size = 15
-text = "VEHICLE  •  WALK TO CAR"
-
-[node name="MapPanel" type="ColorRect" parent="HUDStatic"]
-offset_left = 1045.0
-offset_top = 18.0
-offset_right = 1255.0
-offset_bottom = 155.0
-color = Color(0.02, 0.06, 0.07, 0.86)
-mouse_filter = 2
-
-[node name="MapText" type="Label" parent="HUDStatic/MapPanel"]
-offset_left = 14.0
-offset_top = 12.0
-offset_right = 200.0
-offset_bottom = 120.0
-theme_override_colors/font_color = Color(0.86, 0.91, 0.9, 1)
-theme_override_font_sizes/font_size = 14
-text = "CITY MAP\n\n       • YOU\n    ───┼───\n       │\n   CIVIC   LAKE"
-
-[node name="Speed" type="Label" parent="HUDStatic"]
-offset_left = 580.0
-offset_top = 620.0
-offset_right = 740.0
-offset_bottom = 665.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "0 km/h"
-
-[node name="Action" type="Button" parent="HUDStatic"]
-offset_left = 1165.0
-offset_top = 575.0
-offset_right = 1245.0
-offset_bottom = 655.0
-theme_override_font_sizes/font_size = 18
-text = "ACT"
+script = ExtResource("4")
