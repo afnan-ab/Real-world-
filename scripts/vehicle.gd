@@ -13,6 +13,8 @@ var visual: Node3D
 var camera: Camera3D
 var wheels: Array[MeshInstance3D] = []
 var speed_kmh: float = 0.0
+var setup_color: Color = Color("#b52f32")
+var front_wheels: Array[MeshInstance3D] = []
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
@@ -45,12 +47,25 @@ func _part(pos: Vector3, size: Vector3, mat: Material) -> void:
     mi.material_override = mat
     visual.add_child(mi)
 
+func set_vehicle_color(color: Color) -> void:
+    setup_color = color
+    if is_instance_valid(visual):
+        _recolor_body(visual)
+
+func _recolor_body(node: Node) -> void:
+    for child in node.get_children():
+        if child is MeshInstance3D and child.material_override is StandardMaterial3D:
+            var mat := child.material_override as StandardMaterial3D
+            if mat.albedo_color.r > 0.35 and mat.albedo_color.g < 0.35 and mat.albedo_color.b < 0.40:
+                mat.albedo_color = setup_color
+        _recolor_body(child)
+
 func _build_vehicle() -> void:
     visual = Node3D.new()
     visual.name = "DriveableCarVisual"
     add_child(visual)
 
-    var body := _mat(Color("#b52f32"),0.24,0.55)
+    var body := _mat(setup_color,0.24,0.55)
     var body_dark := _mat(Color("#7f1f24"),0.30,0.45)
     var glass := _mat(Color("#142833"),0.08,0.65)
     var tire := _mat(Color("#0c0e10"),0.95)
@@ -92,6 +107,8 @@ func _build_vehicle() -> void:
             wheel.material_override = tire
             visual.add_child(wheel)
             wheels.append(wheel)
+            if sz < 0.0:
+                front_wheels.append(wheel)
 
             var hub := MeshInstance3D.new()
             var hm := CylinderMesh.new()
@@ -176,6 +193,8 @@ func _physics_process(delta: float) -> void:
 
     for wheel in wheels:
         wheel.rotation.x -= current_forward_speed * delta * 1.7
+    for wheel in front_wheels:
+        wheel.rotation.y = lerp(wheel.rotation.y, steer * 0.45, delta * 8.0)
 
     if not is_on_floor():
         velocity.y -= 20.0 * delta
