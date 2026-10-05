@@ -788,6 +788,14 @@ func _process(delta: float) -> void:
     sun.light_energy = clamp(0.18 + max(0.0,sin(angle)) * 1.35,0.12,1.5)
     world_env.environment.ambient_light_energy = 0.38 + max(0.0,sin(angle))*0.7
 
+    # NPC/traffic simulation runs at a stable ~30 Hz instead of every render frame.
+    # This lowers CPU use on phones without changing the visible world.
+    _simulation_accumulator += delta
+    if _simulation_accumulator < 0.033:
+        return
+    var simulation_delta := _simulation_accumulator
+    _simulation_accumulator = 0.0
+
     var t := Time.get_ticks_msec() * 0.001
     for npc_data in npcs:
         var n: Node3D = npc_data["node"]
@@ -813,14 +821,6 @@ func _process(delta: float) -> void:
         var night := time_of_day < 6.0 or time_of_day > 18.3
         for light in lights:
             light.visible = night
-
-    # NPC/traffic simulation runs at a stable ~30 Hz instead of every render frame.
-    # This lowers CPU use on phones without changing the visible world.
-    _simulation_accumulator += delta
-    if _simulation_accumulator < 0.033:
-        return
-    var simulation_delta := _simulation_accumulator
-    _simulation_accumulator = 0.0
 
     var night := time_of_day < 6.0 or time_of_day > 18.3
     for lamp in street_lamps:
