@@ -3,13 +3,16 @@ extends CharacterBody3D
 @export var max_speed: float = 18.0
 @export var reverse_speed: float = 7.0
 @export var acceleration: float = 10.0
-@export var braking: float = 16.0
+@export var braking: float = 18.0
 @export var steering_speed: float = 1.9
+@export var grip: float = 7.0
 
 var joystick := Vector2.ZERO
 var driving := false
 var visual: Node3D
 var camera: Camera3D
+var wheels: Array[MeshInstance3D] = []
+var speed_kmh: float = 0.0
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
@@ -70,6 +73,7 @@ func _build_vehicle() -> void:
             wheel.rotation_degrees = Vector3(90,0,0)
             wheel.material_override = tire
             visual.add_child(wheel)
+            wheels.append(wheel)
             var hub := MeshInstance3D.new()
             var hm := CylinderMesh.new()
             hm.top_radius = 0.16
@@ -111,10 +115,9 @@ func _physics_process(delta: float) -> void:
 
     var throttle := clamp(-input_vec.y, -1.0, 1.0)
     var steer := clamp(input_vec.x, -1.0, 1.0)
-
     var forward := -global_transform.basis.z
-    var target_speed := throttle * (max_speed if throttle >= 0.0 else reverse_speed)
     var current_forward_speed := velocity.dot(forward)
+    var target_speed := throttle * (max_speed if throttle >= 0.0 else reverse_speed)
 
     if abs(throttle) > 0.08:
         var rate := acceleration if abs(target_speed) > abs(current_forward_speed) else braking
@@ -123,8 +126,15 @@ func _physics_process(delta: float) -> void:
     else:
         velocity = velocity.move_toward(Vector3.ZERO,braking * delta)
 
-    var steering_factor := clamp(abs(current_forward_speed) / 4.0,0.0,1.0)
-    rotation.y -= steer * steering_speed * steering_factor * delta
+    var steering_factor := clamp(abs(current_forward_speed) / 3.0,0.0,1.0)
+    var direction_sign := 1.0 if current_forward_speed >= -0.1 else -1.0
+    rotation.y -= steer * steering_speed * steering_factor * direction_sign * delta
+
+    var lateral := velocity - forward * velocity.dot(forward)
+    velocity -= lateral * min(1.0, grip * delta)
+
+    for wheel in wheels:
+        wheel.rotation.x -= current_forward_speed * delta * 1.7
 
     if not is_on_floor():
         velocity.y -= 20.0 * delta
@@ -132,3 +142,7 @@ func _physics_process(delta: float) -> void:
         velocity.y = 0.0
 
     move_and_slide()
+    speed_kmh = abs(velocity.dot(-global_transform.basis.z)) * 3.6
+
+    var target_fov := 70.0 + clamp(speed_kmh / 12.0,0.0,10.0)
+    camera.fov = lerp(camera.fov,target_fov,delta * 4.0)
