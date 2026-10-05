@@ -76,44 +76,49 @@ func _apply_mobile_quality() -> void:
         if snow_particles: snow_particles.amount = 50
 
 func _setup_environment() -> void:
-    world_env = WorldEnvironment.new()
-    var env := Environment.new()
-    env.background_mode = Environment.BG_SKY
-    env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 0.95
-    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-    env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-    env.glow_enabled = false
-    env.glow_intensity = 0.65
-    env.ambient_light_sky_contribution = 0.72
-    env.glow_strength = 1.15
-    env.fog_enabled = true
-    env.fog_light_color = Color("#b7c7c9")
-    env.fog_density = 0.00115
-    env.fog_height = 18.0
-    env.fog_height_density = 0.008
+    # Reuse the scene-level environment/sun so rendering is available even if
+    # procedural world generation is still initializing on slower Android devices.
+    world_env = get_node_or_null("WorldEnvironment") as WorldEnvironment
+    if world_env == null:
+        world_env = WorldEnvironment.new()
+        add_child(world_env)
 
-    var sky := Sky.new()
-    var sky_mat := ProceduralSkyMaterial.new()
-    sky_mat.sky_top_color = Color("#123b62")
-    sky_mat.sky_horizon_color = Color("#d6e6e8")
-    sky_mat.ground_bottom_color = Color("#15201b")
-    sky_mat.ground_horizon_color = Color("#9eafa8")
-    sky_mat.sun_angle_max = 18.0
-    sky_mat.sun_curve = 0.12
-    sky.sky_material = sky_mat
-    env.sky = sky
-    world_env.environment = env
-    add_child(world_env)
+    if world_env.environment == null:
+        var env := Environment.new()
+        env.background_mode = Environment.BG_SKY
+        env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+        env.ambient_light_energy = 0.95
+        env.ambient_light_sky_contribution = 0.72
+        env.fog_enabled = true
+        env.fog_light_color = Color("#b7c7c9")
+        env.fog_density = 0.00115
+        env.fog_height = 18.0
+        env.fog_height_density = 0.008
+        env.glow_enabled = false
+        var sky := Sky.new()
+        var sky_mat := ProceduralSkyMaterial.new()
+        sky_mat.sky_top_color = Color("#123b62")
+        sky_mat.sky_horizon_color = Color("#d6e6e8")
+        sky_mat.ground_bottom_color = Color("#15201b")
+        sky_mat.ground_horizon_color = Color("#9eafa8")
+        sky_mat.sun_angle_max = 18.0
+        sky_mat.sun_curve = 0.12
+        sky.sky_material = sky_mat
+        env.sky = sky
+        world_env.environment = env
 
-    sun = DirectionalLight3D.new()
+    sun = get_node_or_null("Sun") as DirectionalLight3D
+    if sun == null:
+        sun = DirectionalLight3D.new()
+        sun.name = "Sun"
+        add_child(sun)
+
     sun.light_color = Color("#fff4df")
     sun.light_energy = 1.45
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 90.0
     sun.directional_shadow_fade_start = 0.75
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
-    add_child(sun)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()
