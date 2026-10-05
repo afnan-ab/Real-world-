@@ -2,7 +2,6 @@
 
 [ext_resource path="res://scripts/world.gd" type="Script" id="1"]
 [ext_resource path="res://scripts/player.gd" type="Script" id="2"]
-[ext_resource path="res://scripts/hud_fallback.gd" type="Script" id="4"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jarvis"]
 sky_top_color = Color(0.0705882, 0.231373, 0.384314, 1)
@@ -57,6 +56,117 @@ current = true
 fov = 68.0
 
 
+
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 200
-script = ExtResource("4")
+
+[node name="Top" type="ColorRect" parent="HUD"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 380.0
+offset_bottom = 106.0
+color = Color(0.015, 0.025, 0.03, 0.82)
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="HUD/Top"]
+offset_left = 15.0
+offset_top = 8.0
+offset_right = 340.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(0.95, 0.97, 0.97, 1)
+theme_override_font_sizes/font_size = 24
+text = "REAL WORLD"
+
+[node name="Status" type="Label" parent="HUD/Top"]
+offset_left = 17.0
+offset_top = 46.0
+offset_right = 340.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.65, 0.92, 0.76, 1)
+theme_override_font_sizes/font_size = 14
+text = "ONLINE  •  CITY  •  FREE ROAM"
+
+[node name="Wanted" type="Label" parent="HUD"]
+offset_left = 455.0
+offset_top = 26.0
+offset_right = 780.0
+offset_bottom = 54.0
+theme_override_colors/font_color = Color(0.95, 0.84, 0.46, 1)
+theme_override_font_sizes/font_size = 18
+text = "WANTED  ☆ ☆ ☆ ☆ ☆"
+
+[node name="Mission" type="Label" parent="HUD"]
+offset_left = 455.0
+offset_top = 58.0
+offset_right = 850.0
+offset_bottom = 82.0
+theme_override_colors/font_color = Color(0.9, 0.94, 0.94, 1)
+theme_override_font_sizes/font_size = 14
+text = "MISSION  •  FREE ROAM"
+
+[node name="Vehicle" type="Label" parent="HUD"]
+offset_left = 455.0
+offset_top = 84.0
+offset_right = 850.0
+offset_bottom = 108.0
+theme_override_colors/font_color = Color(0.9, 0.94, 0.94, 1)
+theme_override_font_sizes/font_size = 14
+text = "VEHICLE  •  WALK TO CAR"
+
+[node name="Map" type="ColorRect" parent="HUD"]
+offset_left = 1040.0
+offset_top = 20.0
+offset_right = 1258.0
+offset_bottom = 158.0
+color = Color(0.015, 0.04, 0.05, 0.86)
+mouse_filter = 2
+
+[node name="MapText" type="Label" parent="HUD/Map"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 205.0
+offset_bottom = 120.0
+theme_override_colors/font_color = Color(0.84, 0.9, 0.89, 1)
+theme_override_font_sizes/font_size = 14
+text = "CITY MAP\n\n      • YOU\n   ───┼───\n      │\n  CIVIC   LAKE"
+
+[node name="Speed" type="Label" parent="HUD"]
+offset_left = 570.0
+offset_top = 620.0
+offset_right = 720.0
+offset_bottom = 662.0
+theme_override_colors/font_color = Color(0.96, 0.97, 0.97, 1)
+theme_override_font_sizes/font_size = 28
+text = "0 km/h"
+
+[node name="Joystick" type="ColorRect" parent="HUD"]
+offset_left = 48.0
+offset_top = 520.0
+offset_right = 188.0
+offset_bottom = 660.0
+color = Color(0.08, 0.12, 0.14, 0.32)
+mouse_filter = 2
+
+[node name="Run" type="Button" parent="HUD"]
+offset_left = 1060.0
+offset_top = 620.0
+offset_right = 1145.0
+offset_bottom = 680.0
+theme_override_font_sizes/font_size = 16
+text = "RUN"
+
+[node name="Act" type="Button" parent="HUD"]
+offset_left = 1165.0
+offset_top = 575.0
+offset_right = 1245.0
+offset_bottom = 655.0
+theme_override_font_sizes/font_size = 18
+text = "ACT"
+
+[node name="Jump" type="Button" parent="HUD"]
+offset_left = 1165.0
+offset_top = 665.0
+offset_right = 1245.0
+offset_bottom = 713.0
+theme_override_font_sizes/font_size = 14
+text = "JUMP"
