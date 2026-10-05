@@ -250,9 +250,6 @@ func _process(_delta: float) -> void:
             else:
                 vehicle_label.text = "VEHICLE  •  WALK TO CAR"
                 action_button.text = "ACT"
-        else:
-            vehicle_label.text = "VEHICLE  •  WALK TO CAR"
-            action_button.text = "ACT"
         if speed_label:
             if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
                 speed_label.text = "%d km/h" % int(player.vehicle.speed_kmh)
