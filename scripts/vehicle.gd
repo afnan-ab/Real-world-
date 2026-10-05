@@ -16,7 +16,7 @@ var speed_kmh: float = 0.0
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
-    body_shape.size = Vector3(4.4, 1.45, 2.0)
+    body_shape.size = Vector3(2.0, 1.45, 4.4)
     var collision := CollisionShape3D.new()
     collision.shape = body_shape
     collision.position.y = 0.72
@@ -50,45 +50,86 @@ func _build_vehicle() -> void:
     visual.name = "DriveableCarVisual"
     add_child(visual)
 
-    var body := _mat(Color("#b52f32"),0.28,0.55)
-    var glass := _mat(Color("#18323f"),0.12,0.45)
-    var tire := _mat(Color("#111315"),0.92)
-    var chrome := _mat(Color("#c2c5c5"),0.22,0.75)
-    var light := _mat(Color("#fff0bd"),0.15,0.25)
+    var body := _mat(Color("#b52f32"),0.24,0.55)
+    var body_dark := _mat(Color("#7f1f24"),0.30,0.45)
+    var glass := _mat(Color("#142833"),0.08,0.65)
+    var tire := _mat(Color("#0c0e10"),0.95)
+    var rubber := _mat(Color("#181a1d"),0.88)
+    var chrome := _mat(Color("#bfc4c8"),0.18,0.82)
+    var light := _mat(Color("#fff3c7"),0.10,0.35)
+    var tail := _mat(Color("#d21f2f"),0.18,0.25)
+    var black := _mat(Color("#090b0d"),0.82,0.1)
 
-    _part(Vector3(0,0.62,0),Vector3(4.3,0.72,2.0),body)
-    _part(Vector3(0,1.12,0),Vector3(2.35,0.68,1.72),body)
-    _part(Vector3(0,1.15,0),Vector3(2.05,0.48,1.58),glass)
+    # Low-poly sedan proportions: length runs along the driving axis (-Z).
+    _part(Vector3(0,0.62,0),Vector3(2.0,0.72,4.35),body)
+    _part(Vector3(0,0.98,-0.62),Vector3(1.82,0.18,1.18),body_dark)
+    _part(Vector3(0,1.13,0.22),Vector3(1.72,0.62,2.15),body)
 
+    # Roof and dark glasshouse.
+    _part(Vector3(0,1.38,0.10),Vector3(1.55,0.12,1.95),body)
+    _part(Vector3(0,1.39,-0.64),Vector3(1.47,0.42,0.72),glass)
+    _part(Vector3(0,1.39,0.64),Vector3(1.47,0.42,0.72),glass)
+    _part(Vector3(0,1.39,0.00),Vector3(1.48,0.43,0.30),glass)
+
+    # Bumpers, grille and lower trim.
+    _part(Vector3(0,0.52,-2.16),Vector3(1.86,0.30,0.18),black)
+    _part(Vector3(0,0.53,2.16),Vector3(1.86,0.30,0.18),body_dark)
+    _part(Vector3(0,0.70,-2.27),Vector3(0.92,0.20,0.06),chrome)
+    _part(Vector3(0,0.72,-2.30),Vector3(0.58,0.10,0.04),black)
+
+    # Four wheels with visible hubs.
     for sx in [-1.0,1.0]:
-        for sz in [-0.72,0.72]:
+        for sz in [-1.38,1.38]:
             var wheel := MeshInstance3D.new()
             var cyl := CylinderMesh.new()
-            cyl.top_radius = 0.44
-            cyl.bottom_radius = 0.44
-            cyl.height = 0.25
-            cyl.radial_segments = 18
+            cyl.top_radius = 0.46
+            cyl.bottom_radius = 0.46
+            cyl.height = 0.30
+            cyl.radial_segments = 20
             wheel.mesh = cyl
-            wheel.position = Vector3(sx*1.38,0.48,sz)
+            wheel.position = Vector3(sx*0.98,0.48,sz)
             wheel.rotation_degrees = Vector3(90,0,0)
             wheel.material_override = tire
             visual.add_child(wheel)
             wheels.append(wheel)
+
             var hub := MeshInstance3D.new()
             var hm := CylinderMesh.new()
-            hm.top_radius = 0.16
-            hm.bottom_radius = 0.16
-            hm.height = 0.26
-            hm.radial_segments = 12
+            hm.top_radius = 0.20
+            hm.bottom_radius = 0.20
+            hm.height = 0.32
+            hm.radial_segments = 16
             hub.mesh = hm
-            hub.position = wheel.position
+            hub.position = wheel.position + Vector3(0,0.01,0)
             hub.rotation_degrees = Vector3(90,0,0)
             hub.material_override = chrome
             visual.add_child(hub)
 
-    _part(Vector3(2.0,0.76,-0.55),Vector3(0.12,0.24,0.62),light)
-    _part(Vector3(2.0,0.76,0.55),Vector3(0.12,0.24,0.62),light)
-    _part(Vector3(-2.0,0.76,0),Vector3(0.12,0.24,0.75),_mat(Color("#7b1518"),0.2,0.15))
+            var cap := MeshInstance3D.new()
+            var cm := CylinderMesh.new()
+            cm.top_radius = 0.08
+            cm.bottom_radius = 0.08
+            cm.height = 0.34
+            cm.radial_segments = 12
+            cap.mesh = cm
+            cap.position = wheel.position + Vector3(0,0.02,0)
+            cap.rotation_degrees = Vector3(90,0,0)
+            cap.material_override = rubber
+            visual.add_child(cap)
+
+    # Front/rear lighting and side mirrors.
+    _part(Vector3(-0.62,0.78,-2.16),Vector3(0.42,0.22,0.10),light)
+    _part(Vector3(0.62,0.78,-2.16),Vector3(0.42,0.22,0.10),light)
+    _part(Vector3(-0.62,0.78,2.16),Vector3(0.42,0.22,0.10),tail)
+    _part(Vector3(0.62,0.78,2.16),Vector3(0.42,0.22,0.10),tail)
+    _part(Vector3(-0.98,1.18,-0.58),Vector3(0.16,0.14,0.28),black)
+    _part(Vector3(0.98,1.18,-0.58),Vector3(0.16,0.14,0.28),black)
+
+    # Door handles and a subtle belt line.
+    for sx in [-1.0,1.0]:
+        _part(Vector3(sx*0.91,1.03,-0.05),Vector3(0.035,0.08,0.32),chrome)
+        _part(Vector3(sx*0.91,1.03,0.62),Vector3(0.035,0.08,0.32),chrome)
+        _part(Vector3(sx*0.91,0.93,0.10),Vector3(0.035,0.06,1.55),body_dark)
 
 func set_joystick(v: Vector2) -> void:
     joystick = v
