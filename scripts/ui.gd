@@ -201,8 +201,8 @@ func _build_action_button() -> void:
             vehicle_label.text = "VEHICLE  •  " + world.toggle_vehicle(player)
             action_button.text = "ACT"
             return
-        var vehicle_distance := player.global_position.distance_to(world.driveable_vehicle.global_position)
-        if vehicle_distance < 5.0:
+        var nearest_vehicle = world.get_nearest_driveable_vehicle(player.global_position)
+        if nearest_vehicle:
             vehicle_label.text = "VEHICLE  •  " + world.toggle_vehicle(player)
             action_button.text = "EXIT"
             return
@@ -242,9 +242,14 @@ func _process(_delta: float) -> void:
         if player.in_vehicle:
             vehicle_label.text = "VEHICLE  •  DRIVING  •  STEER + THROTTLE"
             action_button.text = "EXIT"
-        elif world.driveable_vehicle and player.global_position.distance_to(world.driveable_vehicle.global_position) < 5.0:
-            vehicle_label.text = "VEHICLE  •  PRESS ACT TO DRIVE"
-            action_button.text = "DRIVE"
+        else:
+            var nearest_vehicle = world.get_nearest_driveable_vehicle(player.global_position)
+            if nearest_vehicle:
+                vehicle_label.text = "VEHICLE  •  PRESS ACT TO DRIVE"
+                action_button.text = "DRIVE"
+            else:
+                vehicle_label.text = "VEHICLE  •  WALK TO CAR"
+                action_button.text = "ACT"
         else:
             vehicle_label.text = "VEHICLE  •  WALK TO CAR"
             action_button.text = "ACT"
