@@ -43,7 +43,7 @@ func _setup_environment() -> void:
     env.background_mode = Environment.BG_SKY
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
     env.ambient_light_energy = 0.95
-    env.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false
     env.glow_intensity = 0.65
@@ -72,7 +72,7 @@ func _setup_environment() -> void:
     sun.light_color = Color("#fff4df")
     sun.light_energy = 1.45
     sun.shadow_enabled = true
-    sun.directional_shadow_max_distance = 45.0
+    sun.directional_shadow_max_distance = 90.0
     sun.directional_shadow_fade_start = 0.75
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
     add_child(sun)
@@ -120,7 +120,7 @@ func _height(x: float, z: float) -> float:
 func _make_terrain() -> void:
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var n := 56
+    var n := 78
     var extent := 220.0
     var step := (extent * 2.0) / float(n)
     for iz in range(n):
@@ -216,8 +216,8 @@ func _make_mountains() -> void:
         var sm := SphereMesh.new()
         sm.radius = rng.randf_range(32.0, 48.0)
         sm.height = rng.randf_range(62.0, 92.0)
-        sm.radial_segments = 16
-        sm.rings = 8
+        sm.radial_segments = 24
+        sm.rings = 14
         hill.mesh = sm
         hill.position = p
         hill.scale = Vector3(1.5, 0.9, 1.0)
@@ -227,6 +227,8 @@ func _make_mountains() -> void:
 func _make_tree(pos: Vector3, s: float = 1.0) -> void:
     var root := Node3D.new()
     root.position = Vector3(pos.x, _height(pos.x, pos.z), pos.z)
+    root.visibility_range_end = 190.0
+    root.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
     add_child(root)
 
     var trunk := MeshInstance3D.new()
@@ -254,7 +256,7 @@ func _make_tree(pos: Vector3, s: float = 1.0) -> void:
         root.add_child(crown)
 
 func _make_forests() -> void:
-    for i in range(70):
+    for i in range(150):
         var p := Vector3(rng.randf_range(-205,205), 0, rng.randf_range(-205,205))
         if p.length() < 54.0:
             continue
