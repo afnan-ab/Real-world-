@@ -117,7 +117,6 @@ func _setup_environment() -> void:
     sun.light_energy = 1.45
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 90.0
-    sun.directional_shadow_fade_start = 0.75
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
