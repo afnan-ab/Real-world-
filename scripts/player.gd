@@ -14,6 +14,8 @@ var walk_time: float = 0.0
 var sprint_touch := false
 var camera_yaw: float = 0.0
 var camera_pitch: float = -0.16
+var in_vehicle: bool = false
+var vehicle: CharacterBody3D
 
 func _ready() -> void:
     var capsule := CapsuleShape3D.new()
@@ -78,6 +80,21 @@ func _mat(color: Color, rough: float = 0.8) -> StandardMaterial3D:
     m.roughness = rough
     return m
 
+func enter_vehicle(target: CharacterBody3D) -> void:
+    vehicle = target
+    in_vehicle = true
+    visible = false
+    velocity = Vector3.ZERO
+
+func exit_vehicle() -> void:
+    if vehicle and is_instance_valid(vehicle):
+        global_position = vehicle.global_position + vehicle.global_transform.basis.x * 2.8 + Vector3(0,0.2,0)
+    visible = true
+    in_vehicle = false
+    vehicle = null
+    reset_camera_look()
+    camera.current = true
+
 func set_joystick(v: Vector2) -> void:
     joystick = v
 
@@ -97,6 +114,10 @@ func reset_camera_look() -> void:
     camera.rotation.x = camera_pitch
 
 func _physics_process(delta: float) -> void:
+    if in_vehicle:
+        velocity = Vector3.ZERO
+        return
+
     var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
     if joystick.length() > 0.08:
         input_vec = joystick
