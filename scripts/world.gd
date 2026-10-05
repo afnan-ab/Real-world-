@@ -30,6 +30,8 @@ func _ready() -> void:
     _make_waterfront()
     _make_job_locations()
     _make_city_props()
+    _make_realistic_facades()
+    _make_road_details()
     _setup_weather_particles()
 
 func _setup_environment() -> void:
@@ -42,6 +44,7 @@ func _setup_environment() -> void:
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false
     env.glow_intensity = 0.65
+    env.ambient_light_sky_contribution = 0.72
     env.glow_strength = 1.15
     env.fog_enabled = true
     env.fog_light_color = Color("#b7c7c9")
@@ -488,6 +491,44 @@ func _make_city_props() -> void:
         _box(Vector3(x,0.65,-36),Vector3(3.0,0.18,0.55),_mat(Color("#6b4930"),0.82),false)
         for leg_x in [-1.0,1.0]:
             _box(Vector3(x+leg_x,0.28,-36),Vector3(0.14,0.75,0.14),_mat(Color("#303234"),0.62,0.15),false)
+
+func _make_realistic_facades() -> void:
+    # Extra facade depth: awnings, balconies, AC units and warm window lighting.
+    var glass_day := _mat(Color("#31586b"), 0.12, 0.35)
+    var frame := _mat(Color("#34383b"), 0.52, 0.15)
+    var balcony := _mat(Color("#c3b9aa"), 0.68, 0.05)
+    var awning := _mat(Color("#48545b"), 0.58, 0.08)
+    for x in [-52.0,-14.0,25.0,64.0]:
+        for z in [-24.0,66.0]:
+            var h: float = 8.0
+            var w: float = 15.0
+            for row in range(2):
+                var y: float = 3.2 + row * 4.0
+                for side in [-1.0,1.0]:
+                    _box(Vector3(x + side * (w * 0.38), y, z), Vector3(2.2,0.16,8.0), balcony, false)
+                _box(Vector3(x, y + 0.15, z - 5.3), Vector3(3.8,0.12,0.65), awning, false)
+            for wx in [-5.0,-1.7,1.7,5.0]:
+                _box(Vector3(x + wx, 2.8, z - 6.05), Vector3(1.25,1.45,0.08), glass_day, false)
+                _box(Vector3(x + wx, 2.8, z - 6.11), Vector3(1.36,0.08,0.07), frame, false)
+
+func _make_road_details() -> void:
+    var curb := _mat(Color("#b0aea6"), 0.88)
+    var dark := _mat(Color("#34373a"), 0.96)
+    for p in [Vector3(0,0,28),Vector3(-62,0,-20),Vector3(66,0,28),Vector3(-8,0,-58)]:
+        if abs(p.z - 28.0) < 0.1:
+            _box(p + Vector3(0,0.28,4.9), Vector3(390,0.28,0.22), curb, false)
+            _box(p + Vector3(0,0.28,-4.9), Vector3(390,0.28,0.22), curb, false)
+        elif abs(p.z + 58.0) < 0.1:
+            _box(p + Vector3(0,0.28,4.9), Vector3(240,0.28,0.22), curb, false)
+            _box(p + Vector3(0,0.28,-4.9), Vector3(240,0.28,0.22), curb, false)
+        else:
+            _box(p + Vector3(4.9,0.28,0), Vector3(0.22,0.28,270 if p.x < 0 else 230), curb, false)
+            _box(p + Vector3(-4.9,0.28,0), Vector3(0.22,0.28,270 if p.x < 0 else 230), curb, false)
+    # Small asphalt repair patches give the roads more visual variation.
+    for i in range(18):
+        var x: float = rng.randf_range(-170.0,170.0)
+        var z: float = 28.0 + rng.randf_range(-3.4,3.4)
+        _box(Vector3(x,0.255,z), Vector3(rng.randf_range(1.0,3.5),0.025,rng.randf_range(0.35,0.8)), dark, false)
 
 func _setup_weather_particles() -> void:
     rain_particles = _weather_particles(false)
