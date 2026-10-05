@@ -20,6 +20,7 @@ var location_label: Label
 var wanted_label: Label
 var job_label: Label
 var mission_label: Label
+var vehicle_label: Label
 
 func _ready() -> void:
     player = get_parent().get_node("Player")
@@ -96,6 +97,7 @@ func _build_ui() -> void:
     _build_minimap()
     _build_jobs_panel()
     mission_label = _label("MISSION  •  PRESS ACT TO START",Vector2(470,82),14)
+    vehicle_label = _label("VEHICLE  •  WALK TO CAR",Vector2(470,108),14)
     _build_sprint_button()
     _build_action_button()
     _build_jump_button()
@@ -183,6 +185,15 @@ func _build_action_button() -> void:
     action_button.button_down.connect(func(): _press_anim(action_button))
     action_button.button_up.connect(func(): _release_anim(action_button))
     action_button.pressed.connect(func():
+        if player.in_vehicle:
+            vehicle_label.text = "VEHICLE  •  " + world.toggle_vehicle(player)
+            action_button.text = "ACT"
+            return
+        var vehicle_distance := player.global_position.distance_to(world.driveable_vehicle.global_position)
+        if vehicle_distance < 5.0:
+            vehicle_label.text = "VEHICLE  •  " + world.toggle_vehicle(player)
+            action_button.text = "EXIT"
+            return
         player.reset_camera_look()
         if world.mission_active:
             mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
@@ -216,6 +227,15 @@ func _process(_delta: float) -> void:
         var h := int(hour)
         var m := int((hour - h) * 60.0)
         clock_label.text = "%02d:%02d" % [h,m]
+        if player.in_vehicle:
+            vehicle_label.text = "VEHICLE  •  DRIVING  •  STEER + THROTTLE"
+            action_button.text = "EXIT"
+        elif world.driveable_vehicle and player.global_position.distance_to(world.driveable_vehicle.global_position) < 5.0:
+            vehicle_label.text = "VEHICLE  •  PRESS ACT TO DRIVE"
+            action_button.text = "DRIVE"
+        else:
+            vehicle_label.text = "VEHICLE  •  WALK TO CAR"
+            action_button.text = "ACT"
         if mission_label and world.mission_active:
             mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
 
