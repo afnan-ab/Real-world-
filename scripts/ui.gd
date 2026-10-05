@@ -21,6 +21,8 @@ var wanted_label: Label
 var job_label: Label
 var mission_label: Label
 var vehicle_label: Label
+var speed_label: Label
+var hud_status: Label
 
 func _ready() -> void:
     player = get_parent().get_node("Player")
@@ -69,15 +71,20 @@ func _button(text: String, pos: Vector2) -> Button:
     return b
 
 func _build_ui() -> void:
-    _panel(Vector2(18,18),Vector2(360,112),0.28)
-    _label("REAL WORLD",Vector2(32,26),30)
-    _label("Open World • City • Forest • Lake",Vector2(34,61),15)
-    weather_label = _label("WEATHER  •  CLEAR",Vector2(34,88),14)
-    clock_label = _label("08:00",Vector2(302,28),17)
+    _panel(Vector2(18,18),Vector2(360,96),0.24)
+    _label("REAL WORLD",Vector2(32,24),26)
+    _label("CITY  •  FREE ROAM",Vector2(34,56),14)
+    weather_label = _label("CLEAR  •  08:00",Vector2(34,78),13)
+    clock_label = _label("08:00",Vector2(302,25),18)
+
+    hud_status = _label("● ONLINE",Vector2(1030,224),13)
+    hud_status.add_theme_color_override("font_color",Color("#a9e6c2"))
+
+    var stars := _label("WANTED  ☆ ☆ ☆ ☆ ☆",Vector2(470,24),17)
+    stars.add_theme_color_override("font_color",Color("#f0d58a"))
+    wanted_label = stars
 
     location_label = _label("DOWNTOWN",Vector2(470,24),18)
-    wanted_label = _label("● WANTED  0",Vector2(470,52),15)
-    wanted_label.add_theme_color_override("font_color",Color("#f0d58a"))
 
     _panel(Vector2(1020,20),Vector2(138,174),0.28)
     var clear := _button("☀  Clear",Vector2(1031,31))
@@ -101,6 +108,11 @@ func _build_ui() -> void:
     _build_sprint_button()
     _build_action_button()
     _build_jump_button()
+    speed_label = _label("0 km/h",Vector2(575,625),28)
+    speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    speed_label.size = Vector2(130,40)
+    speed_label.add_theme_color_override("font_color",Color("#f3f5f4"))
+    _label("KM/H",Vector2(612,656),11).modulate = Color(1,1,1,0.55)
     _label("DRAG TO LOOK",Vector2(1050,570),13).modulate = Color(1,1,1,0.42)
     var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),15)
     hint.modulate = Color(1,1,1,0.72)
@@ -236,6 +248,11 @@ func _process(_delta: float) -> void:
         else:
             vehicle_label.text = "VEHICLE  •  WALK TO CAR"
             action_button.text = "ACT"
+        if speed_label:
+            if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
+                speed_label.text = "%d km/h" % int(player.vehicle.speed_kmh)
+            else:
+                speed_label.text = "0 km/h"
         if mission_label and world.mission_active:
             mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
 
