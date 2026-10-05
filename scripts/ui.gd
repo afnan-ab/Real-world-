@@ -23,8 +23,11 @@ var mission_label: Label
 var vehicle_label: Label
 var speed_label: Label
 var hud_status: Label
+var _ui_refresh_timer: float = 0.0
 
 func _ready() -> void:
+    # Keep HUD above every 3D node and Android viewport layer.
+    layer = 50
     player = get_parent().get_node("Player")
     world = get_parent()
     viewport_size = get_viewport().get_visible_rect().size
@@ -233,7 +236,11 @@ func _release_anim(control: Control) -> void:
     t.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
     t.tween_property(control, "scale", Vector2.ONE, 0.15)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+    _ui_refresh_timer += delta
+    if _ui_refresh_timer < 0.10:
+        return
+    _ui_refresh_timer = 0.0
     if world and clock_label:
         var hour: float = world.time_of_day
         var h := int(hour)
