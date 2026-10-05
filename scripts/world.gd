@@ -14,6 +14,7 @@ var npcs: Array = []
 var traffic: Array = []
 var street_lamps: Array = []
 var driveable_vehicle: CharacterBody3D
+var driveable_vehicles: Array[CharacterBody3D] = []
 
 func _ready() -> void:
     rng.seed = 190428
@@ -681,18 +682,31 @@ func get_mission_status(player_position: Vector3) -> String:
 
 func _make_driveable_vehicle() -> void:
     var script := load("res://scripts/vehicle.gd")
-    driveable_vehicle = CharacterBody3D.new()
-    driveable_vehicle.set_script(script)
-    driveable_vehicle.position = Vector3(9.0,0.75,20.0)
-    driveable_vehicle.rotation.y = PI
-    driveable_vehicle.name = "DriveableVehicle"
-    add_child(driveable_vehicle)
+    var setups := [
+        {"pos":Vector3(9.0,0.75,20.0),"rot":PI,"color":Color("#b52f32")},
+        {"pos":Vector3(-28.0,0.75,35.0),"rot":0.0,"color":Color("#2b5ea8")},
+        {"pos":Vector3(30.0,0.75,24.0),"rot":PI,"color":Color("#d2b24c")}
+    ]
+    for i in range(setups.size()):
+        var car := CharacterBody3D.new()
+        car.set_script(script)
+        car.position = setups[i]["pos"]
+        car.rotation.y = setups[i]["rot"]
+        car.name = "DriveableVehicle_%d" % i
+        add_child(car)
+        driveable_vehicles.append(car)
+    driveable_vehicle = driveable_vehicles[0]
 
 func _nearest_vehicle(player_position: Vector3) -> CharacterBody3D:
-    if driveable_vehicle and is_instance_valid(driveable_vehicle):
-        if player_position.distance_to(driveable_vehicle.global_position) < 5.0:
-            return driveable_vehicle
-    return null
+    var nearest: CharacterBody3D = null
+    var best_distance := 5.0
+    for car in driveable_vehicles:
+        if is_instance_valid(car) and not car.is_driving():
+            var distance := player_position.distance_to(car.global_position)
+            if distance < best_distance:
+                best_distance = distance
+                nearest = car
+    return nearest
 
 func toggle_vehicle(player: Node) -> String:
     if driveable_vehicle == null or not is_instance_valid(driveable_vehicle):
