@@ -628,6 +628,54 @@ func _make_job_locations() -> void:
         marker.set_meta("job_location",j["name"])
         add_child(marker)
 
+
+# Safe civic mission loop.
+var mission_index: int = -1
+var mission_active: bool = false
+var mission_target: Vector3 = Vector3.ZERO
+var mission_name: String = ""
+var mission_reward: int = 0
+var mission_marker: MeshInstance3D
+
+func start_next_mission() -> void:
+    var missions := [
+        {"name":"CLINIC DELIVERY","target":Vector3(-42,0,-6),"reward":250},
+        {"name":"CITY DOCUMENTS","target":Vector3(38,0,-6),"reward":300},
+        {"name":"FIRE DEPOT SUPPLY","target":Vector3(-42,0,78),"reward":350},
+        {"name":"MARKET COURIER","target":Vector3(38,0,78),"reward":275},
+        {"name":"MARINA DELIVERY","target":Vector3(78,0,-75),"reward":400},
+        {"name":"PARK MAINTENANCE","target":Vector3(10,0,-36),"reward":225}
+    ]
+    mission_index = (mission_index + 1) % missions.size()
+    var m: Dictionary = missions[mission_index]
+    mission_name = String(m["name"])
+    mission_target = m["target"]
+    mission_reward = int(m["reward"])
+    mission_active = true
+    if is_instance_valid(mission_marker):
+        mission_marker.queue_free()
+    mission_marker = MeshInstance3D.new()
+    var ring := TorusMesh.new()
+    ring.inner_radius = 1.7
+    ring.outer_radius = 2.1
+    ring.rings = 12
+    ring.ring_segments = 32
+    mission_marker.mesh = ring
+    mission_marker.material_override = _mat(Color("#f0d35b"),0.28,0.15,Color("#f0d35b"))
+    mission_marker.position = mission_target + Vector3(0,0.12,0)
+    add_child(mission_marker)
+
+func get_mission_status(player_position: Vector3) -> String:
+    if not mission_active:
+        return "PRESS ACT TO START A CIVIC MISSION"
+    var distance := player_position.distance_to(mission_target)
+    if distance < 3.5:
+        mission_active = false
+        if is_instance_valid(mission_marker):
+            mission_marker.queue_free()
+        return "MISSION COMPLETE  +$%d" % mission_reward
+    return "%s  •  %dm" % [mission_name, int(distance)]
+
 func _process(delta: float) -> void:
     time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
     var angle := (time_of_day / 24.0) * TAU
