@@ -59,6 +59,7 @@ fov = 68.0
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 200
+script = ExtResource("4")
 
 [node name="Top" type="ColorRect" parent="HUD"]
 offset_left = 20.0
@@ -148,25 +149,25 @@ color = Color(0.08, 0.12, 0.14, 0.32)
 mouse_filter = 2
 
 [node name="Run" type="Button" parent="HUD"]
-offset_left = 1060.0
-offset_top = 620.0
-offset_right = 1145.0
-offset_bottom = 680.0
+offset_left = 1048.0
+offset_top = 610.0
+offset_right = 1160.0
+offset_bottom = 688.0
 theme_override_font_sizes/font_size = 16
 text = "RUN"
 
 [node name="Act" type="Button" parent="HUD"]
-offset_left = 1165.0
-offset_top = 575.0
-offset_right = 1245.0
-offset_bottom = 655.0
+offset_left = 1148.0
+offset_top = 560.0
+offset_right = 1260.0
+offset_bottom = 672.0
 theme_override_font_sizes/font_size = 18
 text = "ACT"
 
 [node name="Jump" type="Button" parent="HUD"]
-offset_left = 1165.0
-offset_top = 665.0
-offset_right = 1245.0
-offset_bottom = 713.0
+offset_left = 1148.0
+offset_top = 680.0
+offset_right = 1260.0
+offset_bottom = 724.0
 theme_override_font_sizes/font_size = 14
 text = "JUMP"
