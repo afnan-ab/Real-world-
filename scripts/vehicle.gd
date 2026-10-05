@@ -15,6 +15,7 @@ var wheels: Array[MeshInstance3D] = []
 var speed_kmh: float = 0.0
 var setup_color: Color = Color("#b52f32")
 var front_wheels: Array[MeshInstance3D] = []
+var suspension_phase: float = 0.0
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
@@ -82,6 +83,8 @@ func _build_vehicle() -> void:
 
     # Roof and dark glasshouse.
     _part(Vector3(0,1.38,0.10),Vector3(1.55,0.12,1.95),body)
+    _part(Vector3(-0.76,1.12,0.10),Vector3(0.07,0.48,1.95),black)
+    _part(Vector3(0.76,1.12,0.10),Vector3(0.07,0.48,1.95),black)
     _part(Vector3(0,1.39,-0.64),Vector3(1.47,0.42,0.72),glass)
     _part(Vector3(0,1.39,0.64),Vector3(1.47,0.42,0.72),glass)
     _part(Vector3(0,1.39,0.00),Vector3(1.48,0.43,0.30),glass)
@@ -91,6 +94,8 @@ func _build_vehicle() -> void:
     _part(Vector3(0,0.53,2.16),Vector3(1.86,0.30,0.18),body_dark)
     _part(Vector3(0,0.70,-2.27),Vector3(0.92,0.20,0.06),chrome)
     _part(Vector3(0,0.72,-2.30),Vector3(0.58,0.10,0.04),black)
+    _part(Vector3(-0.82,0.55,-1.90),Vector3(0.38,0.08,0.18),chrome)
+    _part(Vector3(0.82,0.55,-1.90),Vector3(0.38,0.08,0.18),chrome)
 
     # Four wheels with visible hubs.
     for sx in [-1.0,1.0]:
@@ -195,6 +200,9 @@ func _physics_process(delta: float) -> void:
         wheel.rotation.x -= current_forward_speed * delta * 1.7
     for wheel in front_wheels:
         wheel.rotation.y = lerp(wheel.rotation.y, steer * 0.45, delta * 8.0)
+    suspension_phase += abs(current_forward_speed) * delta * 0.8
+    var body_bob := sin(suspension_phase) * min(abs(current_forward_speed) / 18.0, 1.0) * 0.018
+    visual.position.y = lerp(visual.position.y, body_bob, delta * 5.0)
 
     if not is_on_floor():
         velocity.y -= 20.0 * delta
