@@ -17,6 +17,10 @@ sun_curve = 0.12
 [sub_resource type="Sky" id="Sky_jarvis"]
 sky_material = SubResource("ProceduralSkyMaterial_jarvis")
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.42
+height = 1.8
+
 [sub_resource type="Environment" id="Environment_jarvis"]
 background_mode = 2
 sky = SubResource("Sky_jarvis")
@@ -48,6 +52,7 @@ position = Vector3(0, 2.2, 12)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("CapsuleShape3D_player")
 
 [node name="CameraPivot" type="Node3D" parent="Player"]
 position = Vector3(0, 1.0, 0)
