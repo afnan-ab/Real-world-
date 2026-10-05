@@ -15,6 +15,8 @@ var traffic: Array = []
 var street_lamps: Array = []
 var driveable_vehicle: CharacterBody3D
 var driveable_vehicles: Array[CharacterBody3D] = []
+var _fps_timer: float = 0.0
+var _quality_level: int = 2
 
 func _ready() -> void:
     rng.seed = 190428
@@ -36,6 +38,42 @@ func _ready() -> void:
     _make_realistic_facades()
     _make_road_details()
     _setup_weather_particles()
+
+
+func _process(delta: float) -> void:
+    # Adaptive quality: keep the full world loaded, but reduce expensive rendering
+    # only when the phone is actually struggling, then restore it when stable.
+    _fps_timer += delta
+    if _fps_timer < 1.5:
+        return
+    _fps_timer = 0.0
+    var fps := Engine.get_frames_per_second()
+    if fps > 52 and _quality_level != 2:
+        _quality_level = 2
+        _apply_mobile_quality()
+    elif fps < 28 and _quality_level != 0:
+        _quality_level = 0
+        _apply_mobile_quality()
+    elif fps < 40 and fps >= 28 and _quality_level != 1:
+        _quality_level = 1
+        _apply_mobile_quality()
+
+func _apply_mobile_quality() -> void:
+    if not sun:
+        return
+    # World geometry/assets stay intact. Only costly effects are scaled dynamically.
+    if _quality_level == 2:
+        sun.directional_shadow_max_distance = 90.0
+        if rain_particles: rain_particles.amount = 220
+        if snow_particles: snow_particles.amount = 120
+    elif _quality_level == 1:
+        sun.directional_shadow_max_distance = 65.0
+        if rain_particles: rain_particles.amount = 140
+        if snow_particles: snow_particles.amount = 80
+    else:
+        sun.directional_shadow_max_distance = 45.0
+        if rain_particles: rain_particles.amount = 80
+        if snow_particles: snow_particles.amount = 50
 
 func _setup_environment() -> void:
     world_env = WorldEnvironment.new()
@@ -95,6 +133,7 @@ func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = tru
     mesh.mesh = pm
     mesh.material_override = material
     mesh.position = pos
+    mesh.visibility_range_end = 260.0
     add_child(mesh)
     if collision:
         var body := StaticBody3D.new()
