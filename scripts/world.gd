@@ -17,6 +17,7 @@ var driveable_vehicle: CharacterBody3D
 var driveable_vehicles: Array[CharacterBody3D] = []
 var _fps_timer: float = 0.0
 var _quality_level: int = 2
+var _simulation_accumulator: float = 0.0
 
 func _ready() -> void:
     rng.seed = 190428
@@ -40,7 +41,7 @@ func _ready() -> void:
     _setup_weather_particles()
 
 
-func _process(delta: float) -> void:
+func _adaptive_quality_tick(delta: float) -> void:
     # Adaptive quality: keep the full world loaded, but reduce expensive rendering
     # only when the phone is actually struggling, then restore it when stable.
     _fps_timer += delta
@@ -196,16 +197,20 @@ func _make_terrain() -> void:
     terrain.material_override = mat
     add_child(terrain)
 
+    # Physics uses a much coarser collision mesh than the visual terrain.
+    # The full 78x78 terrain remains rendered; this cuts collision triangles heavily.
     var body := StaticBody3D.new()
     var collision := CollisionShape3D.new()
     var shape := ConcavePolygonShape3D.new()
+    var collision_n := 26
+    var collision_step := (extent * 2.0) / float(collision_n)
     var faces := PackedVector3Array()
-    for iz in range(n):
-        for ix in range(n):
-            var x0 := -extent + ix * step
-            var z0 := -extent + iz * step
-            var x1 := x0 + step
-            var z1 := z0 + step
+    for iz in range(collision_n):
+        for ix in range(collision_n):
+            var x0 := -extent + ix * collision_step
+            var z0 := -extent + iz * collision_step
+            var x1 := x0 + collision_step
+            var z1 := z0 + collision_step
             var a := Vector3(x0, _height(x0, z0), z0)
             var b := Vector3(x1, _height(x1, z0), z0)
             var c := Vector3(x1, _height(x1, z1), z1)
@@ -368,6 +373,7 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     var root := Node3D.new()
     root.position = pos
     root.rotation.y = rotation_y
+    root.visibility_range_end = 220.0
     add_child(root)
 
     var body_mat := _mat(body_color, 0.28, 0.58)
@@ -474,6 +480,7 @@ func _make_person(pos: Vector3, shirt_color: Color, scale_v: float = 1.0) -> Nod
     var root := Node3D.new()
     root.position = pos
     root.scale = Vector3.ONE * scale_v
+    root.visibility_range_end = 150.0
     add_child(root)
 
     var skin := _mat(Color("#b87958"),0.68)
@@ -754,12 +761,15 @@ func _nearest_vehicle(player_position: Vector3) -> CharacterBody3D:
                 nearest = car
     return nearest
 
+func get_nearest_driveable_vehicle(player_position: Vector3) -> CharacterBody3D:
+    return _nearest_vehicle(player_position)
+
 func toggle_vehicle(player: Node) -> String:
-    if driveable_vehicle == null or not is_instance_valid(driveable_vehicle):
-        return "NO VEHICLE AVAILABLE"
     if player.in_vehicle:
+        var current_vehicle: CharacterBody3D = player.vehicle
         player.exit_vehicle()
-        driveable_vehicle.exit()
+        if current_vehicle and is_instance_valid(current_vehicle):
+            current_vehicle.exit()
         return "ON FOOT"
     var vehicle := _nearest_vehicle(player.global_position)
     if vehicle == null:
@@ -769,6 +779,8 @@ func toggle_vehicle(player: Node) -> String:
     return "DRIVING"
 
 func _process(delta: float) -> void:
+    _adaptive_quality_tick(delta)
+
     time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
     var angle := (time_of_day / 24.0) * TAU
     sun.rotation_degrees.x = -32.0 + sin(angle) * 55.0
@@ -789,7 +801,7 @@ func _process(delta: float) -> void:
     for data in traffic:
         var car: Node3D = data["node"]
         var route: Dictionary = data["route"]
-        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * delta / (float(route["to"]) - float(route["from"])), 1.0)
+        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * simulation_delta / (float(route["to"]) - float(route["from"])), 1.0)
         if route["axis"] == "x":
             car.position.x = lerp(float(route["from"]), float(route["to"]), phase)
             car.position.z = float(route["z"])
@@ -801,6 +813,14 @@ func _process(delta: float) -> void:
         var night := time_of_day < 6.0 or time_of_day > 18.3
         for light in lights:
             light.visible = night
+
+    # NPC/traffic simulation runs at a stable ~30 Hz instead of every render frame.
+    # This lowers CPU use on phones without changing the visible world.
+    _simulation_accumulator += delta
+    if _simulation_accumulator < 0.033:
+        return
+    var simulation_delta := _simulation_accumulator
+    _simulation_accumulator = 0.0
 
     var night := time_of_day < 6.0 or time_of_day > 18.3
     for lamp in street_lamps:
