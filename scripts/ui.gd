@@ -19,6 +19,7 @@ var clock_label: Label
 var location_label: Label
 var wanted_label: Label
 var job_label: Label
+var mission_label: Label
 
 func _ready() -> void:
     player = get_parent().get_node("Player")
@@ -94,6 +95,7 @@ func _build_ui() -> void:
 
     _build_minimap()
     _build_jobs_panel()
+    mission_label = _label("MISSION  •  PRESS ACT TO START",Vector2(470,82),14)
     _build_sprint_button()
     _build_action_button()
     _build_jump_button()
@@ -180,7 +182,14 @@ func _build_action_button() -> void:
     action_button = _circle_button("ACT", Vector2(1215,590), 70)
     action_button.button_down.connect(func(): _press_anim(action_button))
     action_button.button_up.connect(func(): _release_anim(action_button))
-    action_button.pressed.connect(func(): player.reset_camera_look())
+    action_button.pressed.connect(func():
+        player.reset_camera_look()
+        if world.mission_active:
+            mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
+        else:
+            world.start_next_mission()
+            mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
+    )
 
 func _build_jump_button() -> void:
     jump_button = _circle_button("JUMP", Vector2(1215,680), 74)
@@ -207,6 +216,8 @@ func _process(_delta: float) -> void:
         var h := int(hour)
         var m := int((hour - h) * 60.0)
         clock_label.text = "%02d:%02d" % [h,m]
+        if mission_label and world.mission_active:
+            mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
 
 func _input(event: InputEvent) -> void:
     # Read touch before CanvasLayer controls consume it.
