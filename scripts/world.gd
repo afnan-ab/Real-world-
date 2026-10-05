@@ -847,9 +847,14 @@ func _on_hud_run_pressed() -> void:
     var p := get_node_or_null("Player")
     if p:
         p.set_sprint(not p.sprint_touch)
+        # RUN is immediately visible: it also moves the player forward.
+        p.set_joystick(Vector2(0.0, -1.0) if p.sprint_touch else Vector2.ZERO)
         var b := get_node_or_null("HUD/Run") as Button
         if b:
-            b.text = "RUN ON" if p.sprint_touch else "RUN"
+            b.text = "STOP" if p.sprint_touch else "RUN"
+        var v := get_node_or_null("HUD/Vehicle") as Label
+        if v:
+            v.text = "PLAYER  •  RUNNING" if p.sprint_touch else "PLAYER  •  READY"
 
 func _on_hud_act_pressed() -> void:
     var p := get_node_or_null("Player")
@@ -861,8 +866,16 @@ func _on_hud_act_pressed() -> void:
         var v := get_node_or_null("HUD/Vehicle") as Label
         if v:
             v.text = "VEHICLE  •  " + result
+        var m := get_node_or_null("HUD/Mission") as Label
+        if m:
+            m.text = "ACTION  •  " + result
 
 func _on_hud_jump_pressed() -> void:
     var p := get_node_or_null("Player")
-    if p and not p.in_vehicle and p.is_on_floor():
-        p.velocity.y = 7.0
+    if p and not p.in_vehicle:
+        # A tap always produces a clear action; if grounded, jump immediately.
+        if p.is_on_floor():
+            p.velocity.y = 8.0
+        var m := get_node_or_null("HUD/Mission") as Label
+        if m:
+            m.text = "ACTION  •  JUMP"
