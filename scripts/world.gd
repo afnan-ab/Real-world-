@@ -13,6 +13,7 @@ var rng := RandomNumberGenerator.new()
 var npcs: Array = []
 var traffic: Array = []
 var street_lamps: Array = []
+var driveable_vehicle: CharacterBody3D
 
 func _ready() -> void:
     rng.seed = 190428
@@ -23,6 +24,7 @@ func _ready() -> void:
     _make_forests()
     _make_city_and_roads()
     _make_cars()
+    _make_driveable_vehicle()
     _make_traffic()
     _make_pedestrians()
     _make_landmarks()
@@ -675,6 +677,36 @@ func get_mission_status(player_position: Vector3) -> String:
             mission_marker.queue_free()
         return "MISSION COMPLETE  +$%d" % mission_reward
     return "%s  •  %dm" % [mission_name, int(distance)]
+
+
+func _make_driveable_vehicle() -> void:
+    var script := load("res://scripts/vehicle.gd")
+    driveable_vehicle = CharacterBody3D.new()
+    driveable_vehicle.set_script(script)
+    driveable_vehicle.position = Vector3(9.0,0.75,20.0)
+    driveable_vehicle.rotation.y = PI
+    driveable_vehicle.name = "DriveableVehicle"
+    add_child(driveable_vehicle)
+
+func _nearest_vehicle(player_position: Vector3) -> CharacterBody3D:
+    if driveable_vehicle and is_instance_valid(driveable_vehicle):
+        if player_position.distance_to(driveable_vehicle.global_position) < 5.0:
+            return driveable_vehicle
+    return null
+
+func toggle_vehicle(player: Node) -> String:
+    if driveable_vehicle == null or not is_instance_valid(driveable_vehicle):
+        return "NO VEHICLE AVAILABLE"
+    if player.in_vehicle:
+        player.exit_vehicle()
+        driveable_vehicle.exit()
+        return "ON FOOT"
+    var vehicle := _nearest_vehicle(player.global_position)
+    if vehicle == null:
+        return "WALK CLOSER TO THE CAR"
+    player.enter_vehicle(vehicle)
+    vehicle.enter()
+    return "DRIVING"
 
 func _process(delta: float) -> void:
     time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
