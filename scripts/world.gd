@@ -694,6 +694,7 @@ func _make_driveable_vehicle() -> void:
         car.rotation.y = setups[i]["rot"]
         car.name = "DriveableVehicle_%d" % i
         add_child(car)
+        car.set_vehicle_color(setups[i]["color"])
         driveable_vehicles.append(car)
     driveable_vehicle = driveable_vehicles[0]
 
