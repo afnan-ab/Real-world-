@@ -841,3 +841,28 @@ func set_weather(kind: String) -> void:
         world_env.environment.fog_density = 0.0045
     else:
         world_env.environment.fog_density = 0.00115
+
+
+func _on_hud_run_pressed() -> void:
+    var p := get_node_or_null("Player")
+    if p:
+        p.set_sprint(not p.sprint_touch)
+        var b := get_node_or_null("HUD/Run") as Button
+        if b:
+            b.text = "RUN ON" if p.sprint_touch else "RUN"
+
+func _on_hud_act_pressed() -> void:
+    var p := get_node_or_null("Player")
+    if p:
+        var result := toggle_vehicle(p)
+        var b := get_node_or_null("HUD/Act") as Button
+        if b:
+            b.text = "EXIT" if p.in_vehicle else "ACT"
+        var v := get_node_or_null("HUD/Vehicle") as Label
+        if v:
+            v.text = "VEHICLE  •  " + result
+
+func _on_hud_jump_pressed() -> void:
+    var p := get_node_or_null("Player")
+    if p and not p.in_vehicle and p.is_on_floor():
+        p.velocity.y = 7.0
