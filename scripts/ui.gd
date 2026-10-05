@@ -71,7 +71,7 @@ func _button(text: String, pos: Vector2) -> Button:
     return b
 
 func _build_ui() -> void:
-    _panel(Vector2(18,18),Vector2(360,96),0.24)
+    _panel(Vector2(18,18),Vector2(360,96),0.48)
     _label("REAL WORLD",Vector2(32,24),26)
     _label("CITY  •  FREE ROAM",Vector2(34,56),14)
     weather_label = _label("CLEAR  •  08:00",Vector2(34,78),13)
@@ -86,12 +86,12 @@ func _build_ui() -> void:
 
     location_label = _label("DOWNTOWN",Vector2(470,24),18)
 
-    _panel(Vector2(1020,20),Vector2(138,174),0.28)
-    var clear := _button("☀  Clear",Vector2(1031,31))
+    _panel(Vector2(1000,18),Vector2(250,205),0.48)
+    var clear := _button("☀  Clear",Vector2(1010,30))
     clear.pressed.connect(func(): world.set_weather("clear"); weather_label.text="WEATHER  •  CLEAR")
-    var rain := _button("☔  Rain",Vector2(1031,86))
+    var rain := _button("☔  Rain",Vector2(1010,85))
     rain.pressed.connect(func(): world.set_weather("rain"); weather_label.text="WEATHER  •  RAIN")
-    var snow := _button("❄  Snow",Vector2(1031,141))
+    var snow := _button("❄  Snow",Vector2(1010,140))
     snow.pressed.connect(func(): world.set_weather("snow"); weather_label.text="WEATHER  •  SNOW")
 
     # Mobile shooter-style virtual joystick: soft circular base + springy knob.
@@ -113,13 +113,13 @@ func _build_ui() -> void:
     speed_label.size = Vector2(130,40)
     speed_label.add_theme_color_override("font_color",Color("#f3f5f4"))
     _label("KM/H",Vector2(612,656),11).modulate = Color(1,1,1,0.55)
-    _label("DRAG TO LOOK",Vector2(1050,570),13).modulate = Color(1,1,1,0.42)
-    var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),15)
+    _label("DRAG TO LOOK",Vector2(1035,455),13).modulate = Color(1,1,1,0.55)
+    var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),13)
     hint.modulate = Color(1,1,1,0.72)
 
 
 func _build_minimap() -> void:
-    _panel(Vector2(1000,250),Vector2(250,185),0.30)
+    _panel(Vector2(1000,235),Vector2(250,185),0.48)
     _label("CITY MAP",Vector2(1018,262),15)
     var map_bg := ColorRect.new()
     map_bg.position=Vector2(1015,287)
@@ -149,7 +149,7 @@ func _build_minimap() -> void:
     _label("● YOU   ● CIVIC   ▰ LAKE",Vector2(1020,418),11)
 
 func _build_jobs_panel() -> void:
-    _panel(Vector2(870,490),Vector2(300,150),0.28)
+    _panel(Vector2(870,490),Vector2(300,150),0.42)
     _label("AVAILABLE LOCATIONS",Vector2(888,500),16)
     job_label=_label("CITY HOSPITAL\nPOLICE HQ\nFIRE STATION\nBANK  •  MARINA",Vector2(888,528),14)
     job_label.add_theme_color_override("font_color",Color("#dce5e4"))
