@@ -84,7 +84,7 @@ func _build_ui() -> void:
     stars.add_theme_color_override("font_color",Color("#f0d58a"))
     wanted_label = stars
 
-    location_label = _label("DOWNTOWN",Vector2(470,24),18)
+    location_label = _label("DOWNTOWN",Vector2(470,50),16)
 
     _panel(Vector2(1000,18),Vector2(250,205),0.48)
     var clear := _button("☀  Clear",Vector2(1010,30))
