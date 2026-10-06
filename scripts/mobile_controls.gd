@@ -16,6 +16,8 @@ var knob: ColorRect
 var run_button: Button
 var act_button: Button
 var jump_button: Button
+var drive_button: Button
+var action_button: Button
 var run_touch := false
 
 const LOOK_SENSITIVITY := 0.72
@@ -47,6 +49,13 @@ func _ready() -> void:
     run_button = get_node_or_null("Run") as Button
     act_button = get_node_or_null("Act") as Button
     jump_button = get_node_or_null("Jump") as Button
+    drive_button = get_node_or_null("Drive") as Button
+    action_button = get_node_or_null("Action") as Button
+
+    _style_mobile_button(run_button)
+    _style_mobile_button(jump_button)
+    _style_mobile_button(drive_button)
+    _style_mobile_button(action_button)
 
     # Buttons support multitouch on touch input in Godot, so keep them as
     # normal Buttons while routing all gameplay actions through this layer.
@@ -65,6 +74,16 @@ func _ready() -> void:
         jump_button.focus_mode = Control.FOCUS_NONE
         jump_button.mouse_filter = Control.MOUSE_FILTER_STOP
         jump_button.pressed.connect(_on_jump_pressed)
+
+    if drive_button:
+        drive_button.focus_mode = Control.FOCUS_NONE
+        drive_button.mouse_filter = Control.MOUSE_FILTER_STOP
+        drive_button.pressed.connect(_on_drive_pressed)
+
+    if action_button:
+        action_button.focus_mode = Control.FOCUS_NONE
+        action_button.mouse_filter = Control.MOUSE_FILTER_STOP
+        action_button.pressed.connect(_on_action_pressed)
 
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
@@ -192,6 +211,24 @@ func _on_run_up() -> void:
     if run_button:
         run_button.text = "RUN"
     _apply_joystick()
+
+
+func _style_mobile_button(button: Button) -> void:
+    if button == null:
+        return
+    button.add_theme_font_size_override("font_size", 15)
+    button.add_theme_constant_override("outline_size", 2)
+    button.add_theme_color_override("font_color", Color("#eaf4f5"))
+    button.add_theme_color_override("font_hover_color", Color("#ffffff"))
+    button.add_theme_color_override("font_pressed_color", Color("#ffffff"))
+
+func _on_drive_pressed() -> void:
+    if world and world.has_method("_on_hud_act_pressed"):
+        world.call("_on_hud_act_pressed")
+
+func _on_action_pressed() -> void:
+    if world and world.has_method("_on_hud_action_pressed"):
+        world.call("_on_hud_action_pressed")
 
 func _on_act_pressed() -> void:
     if world and world.has_method("_on_hud_act_pressed"):
