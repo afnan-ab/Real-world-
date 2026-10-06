@@ -18,7 +18,12 @@ var act_button: Button
 var jump_button: Button
 var drive_button: Button
 var action_button: Button
+var gas_button: Button
+var brake_button: Button
+var exit_car_button: Button
 var run_touch := false
+var gas_touch := false
+var brake_touch := false
 
 const LOOK_SENSITIVITY := 0.72
 const INPUT_DEADZONE := 0.08
@@ -51,11 +56,17 @@ func _ready() -> void:
     jump_button = get_node_or_null("Jump") as Button
     drive_button = get_node_or_null("Drive") as Button
     action_button = get_node_or_null("Action") as Button
+    gas_button = get_node_or_null("Gas") as Button
+    brake_button = get_node_or_null("Brake") as Button
+    exit_car_button = get_node_or_null("ExitCar") as Button
 
     _style_mobile_button(run_button)
     _style_mobile_button(jump_button)
     _style_mobile_button(drive_button)
     _style_mobile_button(action_button)
+    _style_mobile_button(gas_button)
+    _style_mobile_button(brake_button)
+    _style_mobile_button(exit_car_button)
 
     # Buttons support multitouch on touch input in Godot, so keep them as
     # normal Buttons while routing all gameplay actions through this layer.
@@ -85,13 +96,51 @@ func _ready() -> void:
         action_button.mouse_filter = Control.MOUSE_FILTER_STOP
         action_button.pressed.connect(_on_action_pressed)
 
+    _connect_hold_button(gas_button, true, false)
+    _connect_hold_button(brake_button, false, true)
+    if exit_car_button:
+        exit_car_button.focus_mode = Control.FOCUS_NONE
+        exit_car_button.mouse_filter = Control.MOUSE_FILTER_STOP
+        exit_car_button.pressed.connect(_on_exit_car_pressed)
+
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
         player = world.get_node_or_null("Player")
         if player == null:
             return
 
+    _update_context_controls()
     _apply_joystick()
+
+func _update_context_controls() -> void:
+    var in_car := player != null and is_instance_valid(player) and player.in_vehicle
+    if run_button: run_button.visible = not in_car
+    if jump_button: jump_button.visible = not in_car
+    if action_button: action_button.visible = not in_car
+    if drive_button: drive_button.visible = not in_car
+    if gas_button: gas_button.visible = in_car
+    if brake_button: brake_button.visible = in_car
+    if exit_car_button: exit_car_button.visible = in_car
+    if drive_button: drive_button.text = "ENTER" if not in_car else "DRIVE"
+
+func _connect_hold_button(button: Button, gas: bool, brake: bool) -> void:
+    if button == null: return
+    button.focus_mode = Control.FOCUS_NONE
+    button.mouse_filter = Control.MOUSE_FILTER_STOP
+    button.button_down.connect(func(): gas_touch = gas; brake_touch = brake; _apply_vehicle_pedals())
+    button.button_up.connect(func(): gas_touch = false; brake_touch = false; _apply_vehicle_pedals())
+
+func _apply_vehicle_pedals() -> void:
+    if player == null or not is_instance_valid(player) or not player.in_vehicle or player.vehicle == null: return
+    var car = player.vehicle
+    if is_instance_valid(car) and car.has_method("set_mobile_pedals"):
+        car.set_mobile_pedals(gas_touch, brake_touch)
+
+func _on_exit_car_pressed() -> void:
+    if world and world.has_method("_on_hud_act_pressed"):
+        world.call("_on_hud_act_pressed")
+    gas_touch = false
+    brake_touch = false
 
 func _on_joystick_gui_input(event: InputEvent) -> void:
     if joystick_zone == null:
@@ -193,6 +242,7 @@ func _apply_joystick() -> void:
 
     if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
         player.vehicle.set_joystick(applied)
+        _apply_vehicle_pedals()
     else:
         player.set_joystick(applied)
 
