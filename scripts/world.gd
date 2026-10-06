@@ -92,6 +92,7 @@ func _ready() -> void:
     _make_city_props()
     _make_realistic_facades()
     _make_road_details()
+    _make_step16_world_detail()
     _setup_weather_particles()
     _player_ref = get_node_or_null("Player") as Node3D
     _refresh_dynamic_sector_cache(true)
@@ -1054,6 +1055,24 @@ func _make_road_details() -> void:
         var x: float = rng.randf_range(-170.0,170.0)
         var z: float = 28.0 + rng.randf_range(-3.4,3.4)
         _box(Vector3(x,0.255,z), Vector3(rng.randf_range(1.0,3.5),0.025,rng.randf_range(0.35,0.8)), dark, false)
+
+func _make_step16_world_detail() -> void:
+    # STEP 16: lightweight surface and architecture detail pass.
+    var sidewalk := _mat(Color("#8f908b"), 0.86)
+    var road_mark := _mat(Color("#e2ddc8"), 0.62)
+    var metal := _mat(Color("#3e4549"), 0.58, 0.16)
+    for x in range(-180, 181, 12):
+        _box(Vector3(x, 0.34, 33.6), Vector3(10.8, 0.16, 2.8), sidewalk, false)
+        _box(Vector3(x, 0.34, 22.4), Vector3(10.8, 0.16, 2.8), sidewalk, false)
+    for x in range(-170, 171, 14):
+        _box(Vector3(x, 0.285, 28.0), Vector3(7.0, 0.035, 0.12), road_mark, false)
+    for p in [Vector3(-52,0,-24),Vector3(-14,0,-24),Vector3(25,0,-24),Vector3(64,0,-24)]:
+        _box(p + Vector3(3.0, 8.8, -1.5), Vector3(2.8, 1.3, 2.2), sidewalk, false)
+        _box(p + Vector3(-3.0, 9.2, 1.0), Vector3(1.1, 2.0, 1.1), metal, false)
+    for x in range(-150, 151, 30):
+        _box(Vector3(x, 3.0, 20.0), Vector3(0.16, 6.0, 0.16), metal, false)
+        var lamp := _box(Vector3(x + 0.9, 5.9, 20.0), Vector3(0.9, 0.18, 0.32), _mat(Color("#d9d0a2"), 0.25, 0.05, Color("#ffd98a")), false)
+        street_lamps.append(lamp)
 
 func _setup_weather_particles() -> void:
     rain_particles = _weather_particles(false)
