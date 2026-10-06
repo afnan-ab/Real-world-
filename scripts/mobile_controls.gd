@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-# Single mobile input layer.
-# Buttons are handled here, while touch zones use Control._gui_input so
-# Android GUI input is not mixed with hard-coded 1280x720 screen coordinates.
+# Step 13: mobile-safe input layer.
+# Gameplay touch zones use GUI input so joystick/look stay independent from
+# action buttons. Buttons are connected only here to avoid duplicate signals.
 
 var world: Node
 var player: Node
@@ -17,6 +17,9 @@ var run_button: Button
 var act_button: Button
 var jump_button: Button
 var run_touch := false
+
+const LOOK_SENSITIVITY := 0.72
+const INPUT_DEADZONE := 0.08
 
 func _ready() -> void:
     layer = 220
@@ -45,19 +48,22 @@ func _ready() -> void:
     act_button = get_node_or_null("Act") as Button
     jump_button = get_node_or_null("Jump") as Button
 
-    # All action buttons are owned by this layer. This removes the old split
-    # path where scene connections and touch code could compete.
+    # Buttons support multitouch on touch input in Godot, so keep them as
+    # normal Buttons while routing all gameplay actions through this layer.
     if run_button:
         run_button.focus_mode = Control.FOCUS_NONE
+        run_button.mouse_filter = Control.MOUSE_FILTER_STOP
         run_button.button_down.connect(_on_run_down)
         run_button.button_up.connect(_on_run_up)
 
     if act_button:
         act_button.focus_mode = Control.FOCUS_NONE
+        act_button.mouse_filter = Control.MOUSE_FILTER_STOP
         act_button.pressed.connect(_on_act_pressed)
 
     if jump_button:
         jump_button.focus_mode = Control.FOCUS_NONE
+        jump_button.mouse_filter = Control.MOUSE_FILTER_STOP
         jump_button.pressed.connect(_on_jump_pressed)
 
 func _process(_delta: float) -> void:
@@ -66,14 +72,7 @@ func _process(_delta: float) -> void:
         if player == null:
             return
 
-    var applied := joystick
-    if run_touch and applied.length() < 0.08:
-        applied = Vector2(0.0, -1.0)
-
-    if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
-        player.vehicle.set_joystick(applied)
-    else:
-        player.set_joystick(applied)
+    _apply_joystick()
 
 func _on_joystick_gui_input(event: InputEvent) -> void:
     if joystick_zone == null:
@@ -86,7 +85,6 @@ func _on_joystick_gui_input(event: InputEvent) -> void:
             joystick_zone.accept_event()
         elif not event.pressed and event.index == joystick_touch_id:
             joystick_touch_id = -1
-            joystick = Vector2.ZERO
             _reset_joystick()
             _apply_joystick()
             joystick_zone.accept_event()
@@ -102,7 +100,6 @@ func _on_joystick_gui_input(event: InputEvent) -> void:
             _set_joystick_from_local(event.position)
         elif joystick_touch_id == -2:
             joystick_touch_id = -1
-            joystick = Vector2.ZERO
             _reset_joystick()
             _apply_joystick()
         joystick_zone.accept_event()
@@ -125,7 +122,7 @@ func _on_look_gui_input(event: InputEvent) -> void:
             look_zone.accept_event()
 
     elif event is InputEventScreenDrag and event.index == look_touch_id:
-        var delta_look := event.position - look_last
+        var delta_look := (event.position - look_last) * LOOK_SENSITIVITY
         player.look_camera(delta_look)
         look_last = event.position
         look_zone.accept_event()
@@ -140,7 +137,7 @@ func _on_look_gui_input(event: InputEvent) -> void:
         look_zone.accept_event()
 
     elif event is InputEventMouseMotion and look_touch_id == -2:
-        player.look_camera(event.position - look_last)
+        player.look_camera((event.position - look_last) * LOOK_SENSITIVITY)
         look_last = event.position
         look_zone.accept_event()
 
@@ -151,6 +148,8 @@ func _set_joystick_from_local(pos: Vector2) -> void:
     joystick = Vector2(clamp(v.x, -1.0, 1.0), clamp(v.y, -1.0, 1.0))
     if joystick.length() > 1.0:
         joystick = joystick.normalized()
+    if joystick.length() < INPUT_DEADZONE:
+        joystick = Vector2.ZERO
     _move_knob()
     _apply_joystick()
 
@@ -168,8 +167,9 @@ func _reset_joystick() -> void:
 func _apply_joystick() -> void:
     if player == null or not is_instance_valid(player):
         return
+
     var applied := joystick
-    if run_touch and applied.length() < 0.08:
+    if run_touch and applied.length() < INPUT_DEADZONE:
         applied = Vector2(0.0, -1.0)
 
     if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
@@ -179,7 +179,7 @@ func _apply_joystick() -> void:
 
 func _on_run_down() -> void:
     run_touch = true
-    if player:
+    if player and is_instance_valid(player):
         player.set_sprint(true)
     if run_button:
         run_button.text = "STOP"
@@ -187,7 +187,7 @@ func _on_run_down() -> void:
 
 func _on_run_up() -> void:
     run_touch = false
-    if player:
+    if player and is_instance_valid(player):
         player.set_sprint(false)
     if run_button:
         run_button.text = "RUN"
