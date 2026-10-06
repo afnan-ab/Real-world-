@@ -36,6 +36,13 @@ var _dynamic_sector_cache_player := Vector2i(999999, 999999)
 var _nearby_npcs: Array = []
 var _nearby_traffic: Array = []
 
+# STEP 6: distance-based collision LOD for static world props.
+const COLLISION_ACTIVE_RADIUS := 125.0
+const COLLISION_DISABLE_RADIUS := 155.0
+const COLLISION_REFRESH_INTERVAL := 0.25
+var _collision_lod_bodies: Array[StaticBody3D] = []
+var _collision_refresh_timer: float = 0.0
+
 func _ready() -> void:
     rng.seed = 190428
     _setup_environment()
@@ -152,6 +159,28 @@ func _refresh_dynamic_sector_cache(force: bool = false) -> void:
             var key := player_sector + Vector2i(dx, dz)
             if traffic_buckets.has(key):
                 _nearby_traffic.append_array(traffic_buckets[key])
+
+func _collision_lod_tick(delta: float) -> void:
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        _player_ref = get_node_or_null("Player") as Node3D
+    if _player_ref == null:
+        return
+    _collision_refresh_timer += delta
+    if _collision_refresh_timer < COLLISION_REFRESH_INTERVAL:
+        return
+    _collision_refresh_timer = 0.0
+    var player_pos := _player_ref.global_position
+    for body in _collision_lod_bodies:
+        if not is_instance_valid(body):
+            continue
+        var shape := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+        if shape == null:
+            continue
+        var distance := player_pos.distance_to(body.global_position)
+        if distance <= COLLISION_ACTIVE_RADIUS:
+            shape.disabled = false
+        elif distance >= COLLISION_DISABLE_RADIUS:
+            shape.disabled = true
 
 func _adaptive_quality_tick(delta: float) -> void:
     # Adaptive quality: keep the full world loaded, but reduce expensive rendering
@@ -280,6 +309,7 @@ func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = tru
         shape.size = size
         cs.shape = shape
         body.add_child(cs)
+        _collision_lod_bodies.append(body)
         add_child(body)
     return mesh
 
@@ -991,6 +1021,7 @@ func toggle_vehicle(player: Node) -> String:
 
 func _process(delta: float) -> void:
     _adaptive_quality_tick(delta)
+    _collision_lod_tick(delta)
 
     var hud_speed := get_node_or_null("HUD/Speed") as Label
     var hud_player := get_node_or_null("Player")
