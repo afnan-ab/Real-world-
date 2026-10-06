@@ -146,6 +146,22 @@ theme_override_colors/font_color = Color(0.96, 0.97, 0.97, 1)
 theme_override_font_sizes/font_size = 28
 text = "0 km/h"
 
+[node name="JoystickZone" type="Control" parent="HUD"]
+offset_left = 24.0
+offset_top = 492.0
+offset_right = 212.0
+offset_bottom = 688.0
+mouse_filter = 0
+z_index = 5
+
+[node name="LookZone" type="Control" parent="HUD"]
+anchor_left = 0.54
+anchor_top = 0.18
+anchor_right = 0.82
+anchor_bottom = 0.98
+mouse_filter = 0
+z_index = 4
+
 [node name="Joystick" type="ColorRect" parent="HUD"]
 offset_left = 48.0
 offset_top = 520.0
