@@ -26,6 +26,16 @@ const TRAFFIC_REDUCED_RADIUS := 215.0
 const REDUCED_SIMULATION_INTERVAL := 0.12
 var _reduced_simulation_accumulator: float = 0.0
 
+# STEP 5: sector-aware dynamic simulation cache.
+# The world stays fully present; sectors only reduce how many distant actors
+# are considered by the CPU each simulation tick.
+const DYNAMIC_SECTOR_SIZE := 80.0
+const SECTOR_REFRESH_INTERVAL := 0.75
+var _sector_refresh_timer: float = 0.0
+var _dynamic_sector_cache_player := Vector2i(999999, 999999)
+var _nearby_npcs: Array = []
+var _nearby_traffic: Array = []
+
 func _ready() -> void:
     rng.seed = 190428
     _setup_environment()
@@ -47,6 +57,7 @@ func _ready() -> void:
     _make_road_details()
     _setup_weather_particles()
     _player_ref = get_node_or_null("Player") as Node3D
+    _refresh_dynamic_sector_cache(true)
     _configure_world_lod()
 
 
@@ -81,6 +92,66 @@ func _distance_to_player(node: Node3D) -> float:
     if _player_ref == null:
         return 0.0
     return node.global_position.distance_to(_player_ref.global_position)
+
+func _dynamic_sector_key(pos: Vector3) -> Vector2i:
+    return Vector2i(floori(pos.x / DYNAMIC_SECTOR_SIZE), floori(pos.z / DYNAMIC_SECTOR_SIZE))
+
+func _refresh_dynamic_sector_cache(force: bool = false) -> void:
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        _player_ref = get_node_or_null("Player") as Node3D
+    if _player_ref == null:
+        return
+
+    var player_sector := _dynamic_sector_key(_player_ref.global_position)
+    _sector_refresh_timer += get_process_delta_time()
+
+    if not force and player_sector == _dynamic_sector_cache_player and _sector_refresh_timer < SECTOR_REFRESH_INTERVAL:
+        return
+
+    _sector_refresh_timer = 0.0
+    _dynamic_sector_cache_player = player_sector
+
+    # Build small spatial buckets. This keeps the existing full actor arrays
+    # intact, but avoids distance-testing every actor every simulation tick.
+    var npc_buckets: Dictionary = {}
+    for npc_data in _nearby_npcs:
+        var actor: Node3D = npc_data["node"]
+        if not is_instance_valid(actor):
+            continue
+        var key := _dynamic_sector_key(actor.global_position)
+        if not npc_buckets.has(key):
+            npc_buckets[key] = []
+        npc_buckets[key].append(npc_data)
+
+    var traffic_buckets: Dictionary = {}
+    for traffic_data in traffic:
+        var actor: Node3D = traffic_data["node"]
+        if not is_instance_valid(actor):
+            continue
+        var key := _dynamic_sector_key(actor.global_position)
+        if not traffic_buckets.has(key):
+            traffic_buckets[key] = []
+        traffic_buckets[key].append(traffic_data)
+
+    _nearby_npcs.clear()
+    _nearby_traffic.clear()
+
+    # Include a one-sector safety margin so actors crossing a sector boundary
+    # never disappear from simulation just because the cache refreshed late.
+    var npc_radius_sectors := ceili(NPC_REDUCED_RADIUS / DYNAMIC_SECTOR_SIZE) + 1
+    var traffic_radius_sectors := ceili(TRAFFIC_REDUCED_RADIUS / DYNAMIC_SECTOR_SIZE) + 1
+
+    for dz in range(-npc_radius_sectors, npc_radius_sectors + 1):
+        for dx in range(-npc_radius_sectors, npc_radius_sectors + 1):
+            var key := player_sector + Vector2i(dx, dz)
+            if npc_buckets.has(key):
+                _nearby_npcs.append_array(npc_buckets[key])
+
+    for dz in range(-traffic_radius_sectors, traffic_radius_sectors + 1):
+        for dx in range(-traffic_radius_sectors, traffic_radius_sectors + 1):
+            var key := player_sector + Vector2i(dx, dz)
+            if traffic_buckets.has(key):
+                _nearby_traffic.append_array(traffic_buckets[key])
 
 func _adaptive_quality_tick(delta: float) -> void:
     # Adaptive quality: keep the full world loaded, but reduce expensive rendering
@@ -951,8 +1022,12 @@ func _process(delta: float) -> void:
     if reduced_update:
         _reduced_simulation_accumulator = 0.0
 
+    _refresh_dynamic_sector_cache()
+
     var t := Time.get_ticks_msec() * 0.001
-    # STEP 4: three simulation tiers. Nearby actors stay smooth, medium-distance
+    # STEP 4 + STEP 5: three simulation tiers plus sector-aware candidate
+    # filtering. Nearby actors stay smooth while distant actors cost almost
+    # nothing until the player approaches their sector.
     # actors update less often, and far actors keep their route state without
     # spending CPU every frame.
     for npc_data in npcs:
@@ -975,7 +1050,7 @@ func _process(delta: float) -> void:
         n.position.y = 0.05 + abs(sin(step_t*3.2+phase))*0.025
 
     var night := time_of_day < 6.0 or time_of_day > 18.3
-    for data in traffic:
+    for data in _nearby_traffic:
         var car: Node3D = data["node"]
         var traffic_distance := _distance_to_player(car)
         if traffic_distance > TRAFFIC_REDUCED_RADIUS:
@@ -1009,7 +1084,6 @@ func _process(delta: float) -> void:
             for light in lights:
                 light.visible = night
 
-    var night := time_of_day < 6.0 or time_of_day > 18.3
     for lamp in street_lamps:
         lamp.visible = night
 
