@@ -47,6 +47,11 @@ var _collision_refresh_timer: float = 0.0
 # but scale shadow distance/softness with actual mobile performance.
 var _shadow_quality_level: int = 2
 
+# STEP 8: shared opaque material cache.
+# Reusing identical StandardMaterial3D resources reduces material/state changes
+# while keeping the same colors, roughness, metallic values and emissions.
+var _material_cache: Dictionary = {}
+
 func _ready() -> void:
     rng.seed = 190428
     _setup_environment()
@@ -122,10 +127,10 @@ func _refresh_dynamic_sector_cache(force: bool = false) -> void:
     _sector_refresh_timer = 0.0
     _dynamic_sector_cache_player = player_sector
 
-    # Build small spatial buckets. This keeps the existing full actor arrays
-    # intact, but avoids distance-testing every actor every simulation tick.
+    # Build small spatial buckets from the full NPC list, then keep only
+    # nearby candidates. This fixes the initial empty-cache case from Step 5.
     var npc_buckets: Dictionary = {}
-    for npc_data in _nearby_npcs:
+    for npc_data in npcs:
         var actor: Node3D = npc_data["node"]
         if not is_instance_valid(actor):
             continue
@@ -286,6 +291,23 @@ func _setup_environment() -> void:
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
+    var key := "%s|%.3f|%.3f|%s" % [color.to_html(true), rough, metallic, emission.to_html(true)]
+    if _material_cache.has(key):
+        return _material_cache[key] as StandardMaterial3D
+
+    var m := StandardMaterial3D.new()
+    m.albedo_color = color
+    m.roughness = rough
+    m.metallic = metallic
+    if emission.a > 0.0:
+        m.emission_enabled = true
+        m.emission = emission
+        m.emission_energy_multiplier = 1.5
+    _material_cache[key] = m
+    return m
+
+func _mat_unique(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
+    # Use this when a caller will mutate the material after creation.
     var m := StandardMaterial3D.new()
     m.albedo_color = color
     m.roughness = rough
@@ -420,7 +442,9 @@ func _make_lake() -> void:
     pm.size = Vector2(115.0, 78.0)
     lake.mesh = pm
     lake.position = Vector3(82, 0.28, -76)
-    var wm := _mat(Color("#176d82"), 0.08, 0.65)
+    # Lake material is intentionally unique because its alpha/transparency
+    # is modified after creation and must not affect cached opaque materials.
+    var wm := _mat_unique(Color("#176d82"), 0.08, 0.65)
     wm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     wm.albedo_color.a = 0.86
     lake.material_override = wm
@@ -1080,12 +1104,11 @@ func _process(delta: float) -> void:
     _refresh_dynamic_sector_cache()
 
     var t := Time.get_ticks_msec() * 0.001
-    # STEP 4 + STEP 5: three simulation tiers plus sector-aware candidate
-    # filtering. Nearby actors stay smooth while distant actors cost almost
-    # nothing until the player approaches their sector.
-    # actors update less often, and far actors keep their route state without
-    # spending CPU every frame.
-    for npc_data in npcs:
+    # STEP 4 + STEP 5 + STEP 8: sector-aware candidates and shared materials.
+    # Nearby actors stay smooth while distant actors cost almost nothing until
+    # the player approaches their sector. Rendering also reuses identical
+    # materials to reduce GPU state changes without removing world detail.
+    for npc_data in _nearby_npcs:
         var n: Node3D = npc_data["node"]
         var npc_distance := _distance_to_player(n)
         if npc_distance > NPC_REDUCED_RADIUS:
