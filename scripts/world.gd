@@ -94,6 +94,7 @@ func _ready() -> void:
     _make_road_details()
     _make_step16_world_detail()
     _setup_weather_particles()
+    _step18_visual_setup()
     _player_ref = get_node_or_null("Player") as Node3D
     _refresh_dynamic_sector_cache(true)
     _configure_world_lod()
@@ -1267,6 +1268,31 @@ func toggle_vehicle(player: Node) -> String:
     vehicle.enter()
     return "DRIVING"
 
+
+func _step18_visual_setup() -> void:
+    # STEP 18: lightweight day/night + weather presentation polish.
+    # Keep all world content and avoid expensive post-processing on mobile.
+    if world_env == null or world_env.environment == null:
+        return
+    world_env.environment.glow_enabled = false
+    world_env.environment.fog_enabled = true
+
+func _step18_visual_update() -> void:
+    if world_env == null or world_env.environment == null or sun == null:
+        return
+    var phase := time_of_day / 24.0
+    var daylight := clamp(sin((phase - 0.25) * TAU) * 0.5 + 0.5, 0.0, 1.0)
+    var night := 1.0 - daylight
+    sun.light_color = Color("#fff0d2").lerp(Color("#9db9df"), night * 0.72)
+    sun.light_energy = lerp(0.16, 1.42, daylight)
+    world_env.environment.ambient_light_energy = lerp(0.30, 1.05, daylight)
+    world_env.environment.fog_density = 0.0010 + night * 0.0018
+    if weather == "rain":
+        world_env.environment.fog_density += 0.0022
+    elif weather == "snow":
+        world_env.environment.fog_density += 0.0034
+
+
 func _process(delta: float) -> void:
     _adaptive_quality_tick(delta)
     _collision_lod_tick(delta)
@@ -1288,7 +1314,7 @@ func _process(delta: float) -> void:
     sun.rotation_degrees.x = -32.0 + sin(angle) * 55.0
     sun.rotation_degrees.y = -35.0 + cos(angle) * 15.0
     sun.light_energy = clamp(0.18 + max(0.0,sin(angle)) * 1.35,0.12,1.5)
-    world_env.environment.ambient_light_energy = 0.38 + max(0.0,sin(angle))*0.7
+    _step18_visual_update()
 
     # NPC/traffic simulation runs at a stable ~30 Hz instead of every render frame.
     # This lowers CPU use on phones without changing the visible world.
