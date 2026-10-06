@@ -51,13 +51,26 @@ func _ready() -> void:
 
 
 func _configure_world_lod() -> void:
-    # Full world stays present; distant generated geometry gets a bounded
-    # visibility range so the renderer does not process infinite detail.
-    for child in get_children():
+    # HLOD pass: keep the complete world, but stop rendering tiny/far geometry
+    # once it is no longer useful on screen. Existing explicit ranges are kept.
+    # This complements automatic mesh LOD on imported assets.
+    _apply_lod_recursive(self)
+
+func _apply_lod_recursive(node: Node) -> void:
+    for child in node.get_children():
         if child is GeometryInstance3D:
             var geo := child as GeometryInstance3D
             if geo.visibility_range_end <= 0.0:
-                geo.visibility_range_end = 260.0
+                var distance := 260.0
+                var n := String(geo.name).to_lower()
+                if n.contains("tree") or n.contains("crown") or n.contains("trunk"):
+                    distance = 190.0
+                elif n.contains("window") or n.contains("awning") or n.contains("balcony"):
+                    distance = 210.0
+                elif n.contains("road") or n.contains("terrain"):
+                    distance = 300.0
+                geo.visibility_range_end = distance
+        _apply_lod_recursive(child)
 
 func _distance_to_player(node: Node3D) -> float:
     if _player_ref == null or not is_instance_valid(_player_ref):
