@@ -51,25 +51,28 @@ func _ready() -> void:
 
 
 func _configure_world_lod() -> void:
-    # HLOD pass: keep the complete world, but stop rendering tiny/far geometry
-    # once it is no longer useful on screen. Existing explicit ranges are kept.
-    # This complements automatic mesh LOD on imported assets.
+    # STEP 3: hierarchical visibility for generated buildings and props.
     _apply_lod_recursive(self)
 
 func _apply_lod_recursive(node: Node) -> void:
     for child in node.get_children():
         if child is GeometryInstance3D:
             var geo := child as GeometryInstance3D
-            if geo.visibility_range_end <= 0.0:
-                var distance := 260.0
-                var n := String(geo.name).to_lower()
-                if n.contains("tree") or n.contains("crown") or n.contains("trunk"):
-                    distance = 190.0
-                elif n.contains("window") or n.contains("awning") or n.contains("balcony"):
-                    distance = 210.0
-                elif n.contains("road") or n.contains("terrain"):
-                    distance = 300.0
-                geo.visibility_range_end = distance
+            var distance := float(geo.get_meta("lod_distance", 0.0))
+            if distance <= 0.0:
+                distance = geo.visibility_range_end
+            if distance <= 0.0:
+                distance = 260.0
+
+            var n := String(geo.name).to_lower()
+            if n.contains("tree") or n.contains("crown") or n.contains("trunk"):
+                distance = min(distance, 210.0)
+            elif n.contains("window") or n.contains("awning") or n.contains("balcony"):
+                distance = min(distance, 205.0)
+            elif n.contains("road") or n.contains("terrain"):
+                distance = max(distance, 300.0)
+
+            geo.visibility_range_end = distance
         _apply_lod_recursive(child)
 
 func _distance_to_player(node: Node3D) -> float:
@@ -176,7 +179,22 @@ func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = tru
     mesh.mesh = pm
     mesh.material_override = material
     mesh.position = pos
-    mesh.visibility_range_end = 260.0
+
+    # STEP 3: choose visibility distance from object size.
+    var max_dim := max(size.x, max(size.y, size.z))
+    var lod_distance := 260.0
+    if max_dim >= 120.0:
+        lod_distance = 330.0
+    elif max_dim >= 40.0:
+        lod_distance = 300.0
+    elif max_dim >= 10.0:
+        lod_distance = 260.0
+    elif max_dim >= 3.0:
+        lod_distance = 230.0
+    else:
+        lod_distance = 205.0
+    mesh.visibility_range_end = lod_distance
+    mesh.set_meta("lod_distance", lod_distance)
     # Decorative props do not cast dynamic shadows; buildings/roads keep shadows.
     if collision:
         mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
