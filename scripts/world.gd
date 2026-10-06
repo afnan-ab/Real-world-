@@ -20,7 +20,11 @@ var _quality_level: int = 2
 var _simulation_accumulator: float = 0.0
 var _player_ref: Node3D
 const NPC_SIMULATION_RADIUS := 95.0
+const NPC_REDUCED_RADIUS := 145.0
 const TRAFFIC_SIMULATION_RADIUS := 155.0
+const TRAFFIC_REDUCED_RADIUS := 215.0
+const REDUCED_SIMULATION_INTERVAL := 0.12
+var _reduced_simulation_accumulator: float = 0.0
 
 func _ready() -> void:
     rng.seed = 190428
@@ -831,11 +835,19 @@ func _process(delta: float) -> void:
         return
     var simulation_delta := _simulation_accumulator
     _simulation_accumulator = 0.0
+    _reduced_simulation_accumulator += simulation_delta
+    var reduced_update := _reduced_simulation_accumulator >= REDUCED_SIMULATION_INTERVAL
+    var reduced_delta := _reduced_simulation_accumulator
+    if reduced_update:
+        _reduced_simulation_accumulator = 0.0
 
     var t := Time.get_ticks_msec() * 0.001
     for npc_data in npcs:
         var n: Node3D = npc_data["node"]
-        if _distance_to_player(n) > NPC_SIMULATION_RADIUS:
+        var npc_distance := _distance_to_player(n)
+        if npc_distance > NPC_REDUCED_RADIUS:
+            continue
+        if npc_distance > NPC_SIMULATION_RADIUS and not reduced_update:
             continue
         var phase: float = npc_data["phase"]
         var base: Vector3 = npc_data["base"]
@@ -846,10 +858,15 @@ func _process(delta: float) -> void:
 
     for data in traffic:
         var car: Node3D = data["node"]
-        if _distance_to_player(car) > TRAFFIC_SIMULATION_RADIUS:
+        var traffic_distance := _distance_to_player(car)
+        if traffic_distance > TRAFFIC_REDUCED_RADIUS:
+            continue
+        var is_reduced := traffic_distance > TRAFFIC_SIMULATION_RADIUS
+        if is_reduced and not reduced_update:
             continue
         var route: Dictionary = data["route"]
-        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * simulation_delta / (float(route["to"]) - float(route["from"])), 1.0)
+        var step_delta := reduced_delta if is_reduced else simulation_delta
+        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * step_delta / (float(route["to"]) - float(route["from"])), 1.0)
         if route["axis"] == "x":
             car.position.x = lerp(float(route["from"]), float(route["to"]), phase)
             car.position.z = float(route["z"])
