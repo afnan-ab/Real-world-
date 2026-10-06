@@ -952,42 +952,62 @@ func _process(delta: float) -> void:
         _reduced_simulation_accumulator = 0.0
 
     var t := Time.get_ticks_msec() * 0.001
+    # STEP 4: three simulation tiers. Nearby actors stay smooth, medium-distance
+    # actors update less often, and far actors keep their route state without
+    # spending CPU every frame.
     for npc_data in npcs:
         var n: Node3D = npc_data["node"]
         var npc_distance := _distance_to_player(n)
         if npc_distance > NPC_REDUCED_RADIUS:
             continue
-        if npc_distance > NPC_SIMULATION_RADIUS and not reduced_update:
+
+        var medium_npc := npc_distance > NPC_SIMULATION_RADIUS
+        if medium_npc and not reduced_update:
             continue
+
         var phase: float = npc_data["phase"]
         var base: Vector3 = npc_data["base"]
         var radius: float = npc_data["radius"]
-        n.position = base + Vector3(cos(t*0.45+phase)*radius,0.05,sin(t*0.45+phase)*radius)
-        n.rotation.y = -atan2(sin(t*0.45+phase),cos(t*0.45+phase))
-        n.position.y = 0.05 + abs(sin(t*3.2+phase))*0.025
+        var step_t := t if not medium_npc else t - reduced_delta
+        var walk_rate := 0.45 if not medium_npc else 0.38
+        n.position = base + Vector3(cos(step_t*walk_rate+phase)*radius,0.05,sin(step_t*walk_rate+phase)*radius)
+        n.rotation.y = -atan2(sin(step_t*walk_rate+phase),cos(step_t*walk_rate+phase))
+        n.position.y = 0.05 + abs(sin(step_t*3.2+phase))*0.025
 
+    var night := time_of_day < 6.0 or time_of_day > 18.3
     for data in traffic:
         var car: Node3D = data["node"]
         var traffic_distance := _distance_to_player(car)
         if traffic_distance > TRAFFIC_REDUCED_RADIUS:
             continue
-        var is_reduced := traffic_distance > TRAFFIC_SIMULATION_RADIUS
-        if is_reduced and not reduced_update:
+
+        var medium_traffic := traffic_distance > TRAFFIC_SIMULATION_RADIUS
+        if medium_traffic and not reduced_update:
             continue
+
         var route: Dictionary = data["route"]
-        var step_delta := reduced_delta if is_reduced else simulation_delta
-        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * step_delta / (float(route["to"]) - float(route["from"])), 1.0)
+        var step_delta := reduced_delta if medium_traffic else simulation_delta
+        var route_span := float(route["to"]) - float(route["from"])
+        if abs(route_span) < 0.001:
+            continue
+
+        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * step_delta / route_span, 1.0)
+        if phase < 0.0:
+            phase += 1.0
+
         if route["axis"] == "x":
             car.position.x = lerp(float(route["from"]), float(route["to"]), phase)
             car.position.z = float(route["z"])
         else:
             car.position.z = lerp(float(route["from"]), float(route["to"]), phase)
             car.position.x = float(route["x"])
+
         data["phase"] = phase
-        var lights: Array = car.get_meta("headlights")
-        var night := time_of_day < 6.0 or time_of_day > 18.3
-        for light in lights:
-            light.visible = night
+
+        if car.has_meta("headlights"):
+            var lights: Array = car.get_meta("headlights")
+            for light in lights:
+                light.visible = night
 
     var night := time_of_day < 6.0 or time_of_day > 18.3
     for lamp in street_lamps:
