@@ -57,6 +57,17 @@ const SHADOW_LOD_REFRESH_INTERVAL := 0.35
 var _shadow_lod_geometries: Array[GeometryInstance3D] = []
 var _shadow_lod_timer: float = 0.0
 
+# STEP 12: vehicle render LOD.
+# Cars keep their full geometry, but distant vehicle shadows and headlights
+# are disabled when they are too far to make a visible difference on mobile.
+const VEHICLE_LOD_LIGHT_ON_RADIUS := 70.0
+const VEHICLE_LOD_LIGHT_OFF_RADIUS := 105.0
+const VEHICLE_LOD_SHADOW_ON_RADIUS := 65.0
+const VEHICLE_LOD_SHADOW_OFF_RADIUS := 95.0
+const VEHICLE_LOD_REFRESH_INTERVAL := 0.35
+var _vehicle_lod_roots: Array[Node3D] = []
+var _vehicle_lod_timer: float = 0.0
+
 # STEP 8: shared opaque material cache.
 # Reusing identical StandardMaterial3D resources reduces material/state changes
 # while keeping the same colors, roughness, metallic values and emissions.
@@ -87,6 +98,7 @@ func _ready() -> void:
     _configure_world_lod()
     _apply_step9_culling(self)
     _apply_shadow_lod(true)
+    _apply_vehicle_lod(true)
 
 
 func _configure_world_lod() -> void:
@@ -221,6 +233,49 @@ func _collision_lod_tick(delta: float) -> void:
             shape.disabled = false
         elif distance >= COLLISION_DISABLE_RADIUS:
             shape.disabled = true
+
+func _apply_vehicle_lod(force: bool = false, delta: float = 0.0) -> void:
+    _vehicle_lod_timer += delta
+    if not force and _vehicle_lod_timer < VEHICLE_LOD_REFRESH_INTERVAL:
+        return
+    _vehicle_lod_timer = 0.0
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        _player_ref = get_node_or_null("Player") as Node3D
+    if _player_ref == null:
+        return
+    var player_pos := _player_ref.global_position
+    for root in _vehicle_lod_roots:
+        if not is_instance_valid(root):
+            continue
+        var distance := player_pos.distance_to(root.global_position)
+        var shadow_on := distance <= VEHICLE_LOD_SHADOW_ON_RADIUS
+        var shadow_off := distance >= VEHICLE_LOD_SHADOW_OFF_RADIUS
+        var light_on := distance <= VEHICLE_LOD_LIGHT_ON_RADIUS
+        var light_off := distance >= VEHICLE_LOD_LIGHT_OFF_RADIUS
+        var shadow_state := root.get_meta("vehicle_shadow_state", -1)
+        if shadow_on and shadow_state != 1:
+            for child in root.get_children():
+                if child is GeometryInstance3D:
+                    (child as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+            root.set_meta("vehicle_shadow_state", 1)
+        elif shadow_off and shadow_state != 0:
+            for child in root.get_children():
+                if child is GeometryInstance3D:
+                    (child as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+            root.set_meta("vehicle_shadow_state", 0)
+
+        var lights: Array = root.get_meta("headlights", [])
+        var light_state := root.get_meta("vehicle_light_state", -1)
+        if light_on and light_state != 1:
+            for light in lights:
+                if is_instance_valid(light):
+                    light.visible = true
+            root.set_meta("vehicle_light_state", 1)
+        elif light_off and light_state != 0:
+            for light in lights:
+                if is_instance_valid(light):
+                    light.visible = false
+            root.set_meta("vehicle_light_state", 0)
 
 func _apply_shadow_lod(force: bool = false, delta: float = 0.0) -> void:
     _shadow_lod_timer += delta
@@ -775,6 +830,9 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     head_r.visible = false
     root.add_child(head_r)
     root.set_meta("headlights", [head_l, head_r])
+    root.set_meta("vehicle_shadow_state", 1)
+    root.set_meta("vehicle_light_state", 0)
+    _vehicle_lod_roots.append(root)
     return root
 
 func _local_box(root: Node3D, pos: Vector3, size: Vector3, mat: Material, collision: bool = false) -> void:
@@ -1128,6 +1186,7 @@ func _process(delta: float) -> void:
     _adaptive_quality_tick(delta)
     _collision_lod_tick(delta)
     _apply_shadow_lod(false, delta)
+    _apply_vehicle_lod(false, delta)
 
     var hud_speed := get_node_or_null("HUD/Speed") as Label
     var hud_player := get_node_or_null("Player")
