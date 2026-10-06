@@ -58,12 +58,18 @@ func _ready() -> void:
     action_button = get_node_or_null("Action") as Button
     gas_button = get_node_or_null("Gas") as Button
     brake_button = get_node_or_null("Brake") as Button
+    exit_button = get_node_or_null("ExitCar") as Button
+    gas_button = get_node_or_null("Gas") as Button
+    brake_button = get_node_or_null("Brake") as Button
     exit_car_button = get_node_or_null("ExitCar") as Button
 
     _style_mobile_button(run_button)
     _style_mobile_button(jump_button)
     _style_mobile_button(drive_button)
     _style_mobile_button(action_button)
+    _style_mobile_button(gas_button)
+    _style_mobile_button(brake_button)
+    _style_mobile_button(exit_button)
     _style_mobile_button(gas_button)
     _style_mobile_button(brake_button)
     _style_mobile_button(exit_car_button)
@@ -95,6 +101,17 @@ func _ready() -> void:
         action_button.focus_mode = Control.FOCUS_NONE
         action_button.mouse_filter = Control.MOUSE_FILTER_STOP
         action_button.pressed.connect(_on_action_pressed)
+    if gas_button:
+        gas_button.focus_mode = Control.FOCUS_NONE
+        gas_button.button_down.connect(_on_gas_down)
+        gas_button.button_up.connect(_on_gas_up)
+    if brake_button:
+        brake_button.focus_mode = Control.FOCUS_NONE
+        brake_button.button_down.connect(_on_brake_down)
+        brake_button.button_up.connect(_on_brake_up)
+    if exit_button:
+        exit_button.focus_mode = Control.FOCUS_NONE
+        exit_button.pressed.connect(_on_exit_pressed)
 
     _connect_hold_button(gas_button, true, false)
     _connect_hold_button(brake_button, false, true)
