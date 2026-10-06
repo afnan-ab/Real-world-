@@ -18,6 +18,9 @@ var driveable_vehicles: Array[CharacterBody3D] = []
 var _fps_timer: float = 0.0
 var _quality_level: int = 2
 var _simulation_accumulator: float = 0.0
+var _player_ref: Node3D
+const NPC_SIMULATION_RADIUS := 95.0
+const TRAFFIC_SIMULATION_RADIUS := 155.0
 
 func _ready() -> void:
     rng.seed = 190428
@@ -39,7 +42,25 @@ func _ready() -> void:
     _make_realistic_facades()
     _make_road_details()
     _setup_weather_particles()
+    _player_ref = get_node_or_null("Player") as Node3D
+    _configure_world_lod()
 
+
+func _configure_world_lod() -> void:
+    # Full world stays present; distant generated geometry gets a bounded
+    # visibility range so the renderer does not process infinite detail.
+    for child in get_children():
+        if child is GeometryInstance3D:
+            var geo := child as GeometryInstance3D
+            if geo.visibility_range_end <= 0.0:
+                geo.visibility_range_end = 260.0
+
+func _distance_to_player(node: Node3D) -> float:
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        _player_ref = get_node_or_null("Player") as Node3D
+    if _player_ref == null:
+        return 0.0
+    return node.global_position.distance_to(_player_ref.global_position)
 
 func _adaptive_quality_tick(delta: float) -> void:
     # Adaptive quality: keep the full world loaded, but reduce expensive rendering
@@ -814,6 +835,8 @@ func _process(delta: float) -> void:
     var t := Time.get_ticks_msec() * 0.001
     for npc_data in npcs:
         var n: Node3D = npc_data["node"]
+        if _distance_to_player(n) > NPC_SIMULATION_RADIUS:
+            continue
         var phase: float = npc_data["phase"]
         var base: Vector3 = npc_data["base"]
         var radius: float = npc_data["radius"]
@@ -823,6 +846,8 @@ func _process(delta: float) -> void:
 
     for data in traffic:
         var car: Node3D = data["node"]
+        if _distance_to_player(car) > TRAFFIC_SIMULATION_RADIUS:
+            continue
         var route: Dictionary = data["route"]
         var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * simulation_delta / (float(route["to"]) - float(route["from"])), 1.0)
         if route["axis"] == "x":
