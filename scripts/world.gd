@@ -460,12 +460,31 @@ func _mat_unique(color: Color, rough: float = 0.8, metallic: float = 0.0, emissi
     # Use this when a caller will mutate the material after creation.
     var m := StandardMaterial3D.new()
     m.albedo_color = color
-    m.roughness = rough
-    m.metallic = metallic
+    m.roughness = clamp(rough, 0.04, 1.0)
+    m.metallic = clamp(metallic, 0.0, 1.0)
+    m.metallic_specular = 0.5
     if emission.a > 0.0:
         m.emission_enabled = true
         m.emission = emission
         m.emission_energy_multiplier = 1.5
+    return m
+
+func _car_body_mat(color: Color) -> StandardMaterial3D:
+    # STEP 15: automotive paint preset. Clearcoat gives painted bodywork a
+    # realistic highlight while keeping the material reused across traffic.
+    var key := "carpaint|%s" % color.to_html(true)
+    if _material_cache.has(key):
+        return _material_cache[key] as StandardMaterial3D
+
+    var m := StandardMaterial3D.new()
+    m.albedo_color = color
+    m.roughness = 0.22
+    m.metallic = 0.58
+    m.metallic_specular = 0.5
+    m.clearcoat_enabled = true
+    m.clearcoat = 0.65
+    m.clearcoat_roughness = 0.18
+    _material_cache[key] = m
     return m
 
 func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = true) -> MeshInstance3D:
@@ -558,7 +577,9 @@ func _make_terrain() -> void:
     terrain.mesh = mesh
     var mat := StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
-    mat.roughness = 0.96
+    mat.roughness = 0.92
+    mat.metallic = 0.0
+    mat.metallic_specular = 0.35
     terrain.material_override = mat
     add_child(terrain)
 
@@ -759,10 +780,10 @@ func _append_cone(st: SurfaceTool, bottom_radius: float, top_radius: float, heig
         st.set_color(color); st.add_vertex(v3)
 
 func _make_road(pos: Vector3, size: Vector3) -> void:
-    _box(pos + Vector3(0,0.12,0), size, _mat(Color("#1e2225"), 0.92), false)
+    _box(pos + Vector3(0,0.12,0), size, _mat(Color("#1e2225"), 0.86), false)
     var sidewalk_size := Vector3(size.x, 0.16, 1.8) if size.x > size.z else Vector3(1.8, 0.16, size.z)
     if size.x > size.z:
-        _box(pos + Vector3(0,0.21,size.z * 0.65), sidewalk_size, _mat(Color("#8c8d88"), 0.86), false)
+        _box(pos + Vector3(0,0.21,size.z * 0.65), sidewalk_size, _mat(Color("#8c8d88"), 0.80), false)
         _box(pos + Vector3(0,0.21,-size.z * 0.65), sidewalk_size, _mat(Color("#8c8d88"), 0.86), false)
         for x in range(-int(size.x/2)+8, int(size.x/2)-5, 14):
             _box(pos + Vector3(x,0.26,0), Vector3(7,0.035,0.13), _mat(Color("#e6d28d"), 0.65), false)
@@ -773,7 +794,7 @@ func _make_road(pos: Vector3, size: Vector3) -> void:
             _box(pos + Vector3(0,0.26,z), Vector3(0.13,0.035,7), _mat(Color("#e6d28d"), 0.65), false)
 
 func _make_building(pos: Vector3, size: Vector3, color: Color, floors: int = 2) -> void:
-    _box(pos + Vector3(0,size.y/2.0,0), size, _mat(color, 0.72), true)
+    _box(pos + Vector3(0,size.y/2.0,0), size, _mat(color, 0.78), true)
     _box(pos + Vector3(0,size.y + 0.22,0), Vector3(size.x*1.03,0.44,size.z*1.03), _mat(Color("#25282b"), 0.78, 0.05), false)
 
     var glass := _mat(Color("#254a60"), 0.16, 0.32, Color("#0b2530"))
@@ -822,10 +843,10 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     root.visibility_range_end = 220.0
     add_child(root)
 
-    var body_mat := _mat(body_color, 0.28, 0.58)
-    var glass := _mat(Color("#162b37"), 0.12, 0.42)
-    var tire := _mat(Color("#111214"), 0.92)
-    var chrome := _mat(Color("#b9bdbe"), 0.2, 0.8)
+    var body_mat := _car_body_mat(body_color)
+    var glass := _mat(Color("#162b37"), 0.10, 0.30)
+    var tire := _mat(Color("#111214"), 0.96)
+    var chrome := _mat(Color("#b9bdbe"), 0.16, 0.86)
     var lamp := _mat(Color("#f6e9bd"), 0.16, 0.25, Color("#fff0b0"))
 
     _local_box(root, Vector3(0,0.62,0), Vector3(4.3,0.7,2.0), body_mat)
@@ -998,10 +1019,10 @@ func _make_city_props() -> void:
 
 func _make_realistic_facades() -> void:
     # Extra facade depth: awnings, balconies, AC units and warm window lighting.
-    var glass_day := _mat(Color("#31586b"), 0.12, 0.35)
+    var glass_day := _mat(Color("#31586b"), 0.10, 0.30)
     var frame := _mat(Color("#34383b"), 0.52, 0.15)
-    var balcony := _mat(Color("#c3b9aa"), 0.68, 0.05)
-    var awning := _mat(Color("#48545b"), 0.58, 0.08)
+    var balcony := _mat(Color("#c3b9aa"), 0.74, 0.04)
+    var awning := _mat(Color("#48545b"), 0.62, 0.08)
     for x in [-52.0,-14.0,25.0,64.0]:
         for z in [-24.0,66.0]:
             var h: float = 8.0
@@ -1016,8 +1037,8 @@ func _make_realistic_facades() -> void:
                 _box(Vector3(x + wx, 2.8, z - 6.11), Vector3(1.36,0.08,0.07), frame, false)
 
 func _make_road_details() -> void:
-    var curb := _mat(Color("#b0aea6"), 0.88)
-    var dark := _mat(Color("#34373a"), 0.96)
+    var curb := _mat(Color("#b0aea6"), 0.82)
+    var dark := _mat(Color("#34373a"), 0.90)
     for p in [Vector3(0,0,28),Vector3(-62,0,-20),Vector3(66,0,28),Vector3(-8,0,-58)]:
         if abs(p.z - 28.0) < 0.1:
             _box(p + Vector3(0,0.28,4.9), Vector3(390,0.28,0.22), curb, false)
