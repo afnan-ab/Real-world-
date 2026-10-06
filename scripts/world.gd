@@ -75,11 +75,31 @@ func _ready() -> void:
     _player_ref = get_node_or_null("Player") as Node3D
     _refresh_dynamic_sector_cache(true)
     _configure_world_lod()
+    _apply_step9_culling(self)
 
 
 func _configure_world_lod() -> void:
-    # STEP 3: hierarchical visibility for generated buildings and props.
+    # STEP 3 + STEP 9: hierarchical visibility plus tighter distant culling.
+    # Major world pieces stay visible farther away; small decoration is culled
+    # earlier to reduce GPU work without removing gameplay content.
     _apply_lod_recursive(self)
+
+func _apply_step9_culling(node: Node) -> void:
+    for child in node.get_children():
+        if child is GeometryInstance3D:
+            var geo := child as GeometryInstance3D
+            var distance := float(geo.get_meta("lod_distance", geo.visibility_range_end))
+            if distance <= 0.0:
+                distance = 260.0
+
+            var n := String(geo.name).to_lower()
+            if n.contains("road") or n.contains("terrain") or n.contains("mountain"):
+                geo.visibility_range_end = max(distance, 300.0)
+            elif n.contains("window") or n.contains("awning") or n.contains("balcony") or n.contains("curb"):
+                geo.visibility_range_end = min(distance, 205.0)
+            else:
+                geo.visibility_range_end = min(distance, 260.0)
+        _apply_step9_culling(child)
 
 func _apply_lod_recursive(node: Node) -> void:
     for child in node.get_children():
