@@ -426,18 +426,33 @@ func _setup_environment() -> void:
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
+    # STEP 15: shared PBR material profiles.
+    # Keep materials opaque and reused for mobile performance, while using
+    # physically-based roughness/metallic response for a more believable world.
     var key := "%s|%.3f|%.3f|%s" % [color.to_html(true), rough, metallic, emission.to_html(true)]
     if _material_cache.has(key):
         return _material_cache[key] as StandardMaterial3D
 
     var m := StandardMaterial3D.new()
     m.albedo_color = color
-    m.roughness = rough
-    m.metallic = metallic
+    m.roughness = clamp(rough, 0.04, 1.0)
+    m.metallic = clamp(metallic, 0.0, 1.0)
+    m.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+    m.diffuse_mode = BaseMaterial3D.DIFFUSE_BURLEY
+    m.cull_mode = BaseMaterial3D.CULL_BACK
+
+    # Material-specific highlights:
+    # low-roughness painted/metal surfaces get a controlled clear coat;
+    # rough surfaces remain matte instead of looking like plastic.
+    if m.roughness < 0.38:
+        m.clearcoat = clamp((0.38 - m.roughness) * 1.8 + metallic * 0.18, 0.0, 0.72)
+        m.clearcoat_roughness = clamp(m.roughness * 1.25, 0.08, 0.5)
+
     if emission.a > 0.0:
         m.emission_enabled = true
         m.emission = emission
-        m.emission_energy_multiplier = 1.5
+        m.emission_energy_multiplier = 1.35
+
     _material_cache[key] = m
     return m
 
