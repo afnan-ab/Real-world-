@@ -43,6 +43,10 @@ const COLLISION_REFRESH_INTERVAL := 0.25
 var _collision_lod_bodies: Array[StaticBody3D] = []
 var _collision_refresh_timer: float = 0.0
 
+# STEP 7: adaptive shadow quality. Keep the world and lighting intact,
+# but scale shadow distance/softness with actual mobile performance.
+var _shadow_quality_level: int = 2
+
 func _ready() -> void:
     rng.seed = 190428
     _setup_environment()
@@ -190,15 +194,33 @@ func _adaptive_quality_tick(delta: float) -> void:
         return
     _fps_timer = 0.0
     var fps := Engine.get_frames_per_second()
-    if fps > 52 and _quality_level != 2:
-        _quality_level = 2
+    var next_quality := 2
+    if fps < 28:
+        next_quality = 0
+    elif fps < 40:
+        next_quality = 1
+    if next_quality != _quality_level:
+        _quality_level = next_quality
         _apply_mobile_quality()
-    elif fps < 28 and _quality_level != 0:
-        _quality_level = 0
-        _apply_mobile_quality()
-    elif fps < 40 and fps >= 28 and _quality_level != 1:
-        _quality_level = 1
-        _apply_mobile_quality()
+    if next_quality != _shadow_quality_level:
+        _shadow_quality_level = next_quality
+        _apply_shadow_quality()
+
+func _apply_shadow_quality() -> void:
+    if not sun:
+        return
+    if _shadow_quality_level == 2:
+        sun.directional_shadow_max_distance = 90.0
+        sun.shadow_bias = 0.08
+        sun.shadow_normal_bias = 1.0
+    elif _shadow_quality_level == 1:
+        sun.directional_shadow_max_distance = 68.0
+        sun.shadow_bias = 0.10
+        sun.shadow_normal_bias = 1.25
+    else:
+        sun.directional_shadow_max_distance = 48.0
+        sun.shadow_bias = 0.12
+        sun.shadow_normal_bias = 1.5
 
 func _apply_mobile_quality() -> void:
     if not sun:
@@ -259,6 +281,8 @@ func _setup_environment() -> void:
     sun.light_energy = 1.45
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 90.0
+    sun.shadow_bias = 0.08
+    sun.shadow_normal_bias = 1.0
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
