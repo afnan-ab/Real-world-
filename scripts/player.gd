@@ -9,6 +9,10 @@ extends CharacterBody3D
 
 var joystick := Vector2.ZERO
 var visual: Node3D
+var left_arm: MeshInstance3D
+var right_arm: MeshInstance3D
+var left_leg: MeshInstance3D
+var right_leg: MeshInstance3D
 var camera: Camera3D
 var walk_time: float = 0.0
 var sprint_touch := false
@@ -46,21 +50,21 @@ func _build_human() -> void:
 
     _part(BoxMesh.new(), Vector3(0,0.55,0), Vector3(0.52,0.9,0.34), shirt)
     _part(BoxMesh.new(), Vector3(0,0.98,0), Vector3(0.58,0.18,0.38), shirt_dark)
-    _part(BoxMesh.new(), Vector3(-0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
-    _part(BoxMesh.new(), Vector3(0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
+    left_arm = _part(BoxMesh.new(), Vector3(-0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
+    right_arm = _part(BoxMesh.new(), Vector3(0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
     _part(SphereMesh.new(), Vector3(0,1.23,-0.19), Vector3(0.12,0.07,0.05), skin_detail, true)
     _part(SphereMesh.new(), Vector3(0,1.25,0), Vector3(0.38,0.38,0.38), skin, true)
     _part(SphereMesh.new(), Vector3(0,1.45,0), Vector3(0.39,0.16,0.39), hair, true)
     _part(SphereMesh.new(), Vector3(-0.13,1.29,-0.18), Vector3(0.045,0.045,0.045), _mat(Color("#202020"),0.35), true)
     _part(SphereMesh.new(), Vector3(0.13,1.29,-0.18), Vector3(0.045,0.045,0.045), _mat(Color("#202020"),0.35), true)
-    _part(BoxMesh.new(), Vector3(-0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
-    _part(BoxMesh.new(), Vector3(0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
+    left_leg = _part(BoxMesh.new(), Vector3(-0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
+    right_leg = _part(BoxMesh.new(), Vector3(0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
     _part(BoxMesh.new(), Vector3(-0.53,0.35,0), Vector3(0.14,0.68,0.14), skin)
     _part(BoxMesh.new(), Vector3(0.53,0.35,0), Vector3(0.14,0.68,0.14), skin)
     _part(BoxMesh.new(), Vector3(-0.20,-0.92,-0.06), Vector3(0.22,0.13,0.42), shoes)
     _part(BoxMesh.new(), Vector3(0.20,-0.92,-0.06), Vector3(0.22,0.13,0.42), shoes)
 
-func _part(mesh: Mesh, pos: Vector3, scale_v: Vector3, material: Material, sphere: bool = false) -> void:
+func _part(mesh: Mesh, pos: Vector3, scale_v: Vector3, material: Material, sphere: bool = false) -> MeshInstance3D:
     var mi := MeshInstance3D.new()
     if sphere:
         var sm := SphereMesh.new()
@@ -73,6 +77,7 @@ func _part(mesh: Mesh, pos: Vector3, scale_v: Vector3, material: Material, spher
     mi.scale = scale_v
     mi.material_override = material
     visual.add_child(mi)
+    return mi
 
 func _mat(color: Color, rough: float = 0.8) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()
@@ -139,10 +144,21 @@ func _physics_process(delta: float) -> void:
     if dir.length() > 0.08:
         var yaw := atan2(dir.x, dir.z)
         visual.rotation.y = lerp_angle(visual.rotation.y, yaw, min(1.0, delta * 9.0))
-        walk_time += delta * (8.0 if current_speed > speed else 5.0)
-        visual.position.y = 0.9 + sin(walk_time) * 0.035
+        walk_time += delta * (11.0 if current_speed > speed else 7.5)
+        var stride := sin(walk_time)
+        var arm_stride := stride * 0.62
+        var leg_stride := stride * 0.72
+        left_arm.rotation.x = lerp(left_arm.rotation.x, arm_stride, delta * 12.0)
+        right_arm.rotation.x = lerp(right_arm.rotation.x, -arm_stride, delta * 12.0)
+        left_leg.rotation.x = lerp(left_leg.rotation.x, -leg_stride, delta * 12.0)
+        right_leg.rotation.x = lerp(right_leg.rotation.x, leg_stride, delta * 12.0)
+        visual.position.y = 0.9 + abs(stride) * 0.028
     else:
         visual.position.y = move_toward(visual.position.y, 0.9, delta * 4.0)
+        left_arm.rotation.x = lerp(left_arm.rotation.x, 0.0, delta * 10.0)
+        right_arm.rotation.x = lerp(right_arm.rotation.x, 0.0, delta * 10.0)
+        left_leg.rotation.x = lerp(left_leg.rotation.x, 0.0, delta * 10.0)
+        right_leg.rotation.x = lerp(right_leg.rotation.x, 0.0, delta * 10.0)
 
     if not is_on_floor():
         velocity.y -= gravity * delta
