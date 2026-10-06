@@ -1433,6 +1433,13 @@ func _on_hud_act_pressed() -> void:
         if m:
             m.text = "ACTION  •  " + result
 
+func _on_hud_action_pressed() -> void:
+    var m := get_node_or_null("HUD/Mission") as Label
+    if m:
+        start_next_mission()
+        m.text = "ACTION  •  " + mission_name
+
+
 func _on_hud_jump_pressed() -> void:
     var p := get_node_or_null("Player")
     if p and not p.in_vehicle:
