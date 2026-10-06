@@ -350,36 +350,65 @@ func _apply_mobile_quality() -> void:
         if snow_particles: snow_particles.amount = 50
 
 func _setup_environment() -> void:
-    # Reuse the scene-level environment/sun so rendering is available even if
-    # procedural world generation is still initializing on slower Android devices.
+    # STEP 14: lighting + environment overhaul.
+    # Keep the full world and all gameplay content. This only improves the
+    # outdoor presentation while staying friendly to the Compatibility renderer.
     world_env = get_node_or_null("WorldEnvironment") as WorldEnvironment
     if world_env == null:
         world_env = WorldEnvironment.new()
+        world_env.name = "WorldEnvironment"
         add_child(world_env)
 
-    if world_env.environment == null:
-        var env := Environment.new()
-        env.background_mode = Environment.BG_SKY
-        env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-        env.ambient_light_energy = 0.95
-        env.ambient_light_sky_contribution = 0.72
-        env.fog_enabled = true
-        env.fog_light_color = Color("#b7c7c9")
-        env.fog_density = 0.00115
-        env.fog_height = 18.0
-        env.fog_height_density = 0.008
-        env.glow_enabled = false
-        var sky := Sky.new()
-        var sky_mat := ProceduralSkyMaterial.new()
-        sky_mat.sky_top_color = Color("#123b62")
-        sky_mat.sky_horizon_color = Color("#d6e6e8")
-        sky_mat.ground_bottom_color = Color("#15201b")
-        sky_mat.ground_horizon_color = Color("#9eafa8")
-        sky_mat.sun_angle_max = 18.0
-        sky_mat.sun_curve = 0.12
-        sky.sky_material = sky_mat
-        env.sky = sky
+    var env := world_env.environment
+    if env == null:
+        env = Environment.new()
         world_env.environment = env
+
+    # A procedural sky gives the scene a real outdoor horizon instead of the
+    # flat gray/white background. It also contributes ambient/specular light.
+    env.background_mode = Environment.BG_SKY
+    env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+    env.ambient_light_energy = 0.72
+    env.ambient_light_sky_contribution = 0.78
+
+    var sky := env.sky
+    if sky == null:
+        sky = Sky.new()
+        env.sky = sky
+
+    var sky_mat := sky.sky_material as ProceduralSkyMaterial
+    if sky_mat == null:
+        sky_mat = ProceduralSkyMaterial.new()
+        sky.sky_material = sky_mat
+
+    sky_mat.sky_top_color = Color("#0b2748")
+    sky_mat.sky_horizon_color = Color("#9bc4d5")
+    sky_mat.ground_bottom_color = Color("#18231f")
+    sky_mat.ground_horizon_color = Color("#71877d")
+    sky_mat.sun_angle_max = 12.0
+    sky_mat.sun_curve = 0.08
+
+    # Depth fog blends distant buildings into the sky and gives the large world
+    # atmospheric depth without using expensive volumetric fog.
+    env.fog_enabled = true
+    env.fog_light_color = Color("#a9c3cb")
+    env.fog_light_energy = 0.55
+    env.fog_density = 0.00065
+    env.fog_height = 10.0
+    env.fog_height_density = 0.003
+    env.fog_sun_scatter = 0.18
+    env.fog_aerial_perspective = 0.72
+    env.fog_sky_affect = 0.18
+    env.fog_depth_begin = 65.0
+    env.fog_depth_end = 320.0
+
+    # Gentle color correction makes materials read better on mobile screens.
+    # Auto exposure and heavy post-processing stay disabled for performance.
+    env.adjustment_enabled = true
+    env.adjustment_brightness = 1.03
+    env.adjustment_contrast = 1.08
+    env.adjustment_saturation = 1.06
+    env.glow_enabled = false
 
     sun = get_node_or_null("Sun") as DirectionalLight3D
     if sun == null:
@@ -387,12 +416,13 @@ func _setup_environment() -> void:
         sun.name = "Sun"
         add_child(sun)
 
-    sun.light_color = Color("#fff4df")
-    sun.light_energy = 1.45
+    sun.light_color = Color("#fff0d2")
+    sun.light_energy = 1.30
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 90.0
     sun.shadow_bias = 0.08
     sun.shadow_normal_bias = 1.0
+    sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
     sun.rotation_degrees = Vector3(-48.0, -32.0, 0.0)
 
 func _mat(color: Color, rough: float = 0.8, metallic: float = 0.0, emission: Color = Color(0,0,0,0)) -> StandardMaterial3D:
