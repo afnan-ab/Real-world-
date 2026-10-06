@@ -17,6 +17,8 @@ var setup_color: Color = Color("#b52f32")
 var front_wheels: Array[MeshInstance3D] = []
 var suspension_phase: float = 0.0
 var mobile_drive := 0.0
+var mobile_gas := false
+var mobile_brake := false
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
@@ -160,6 +162,10 @@ func set_joystick(v: Vector2) -> void:
 func set_mobile_drive(value: float) -> void:
     mobile_drive = clamp(value, -1.0, 1.0)
 
+func set_mobile_pedals(gas: bool, brake: bool) -> void:
+    mobile_gas = gas
+    mobile_brake = brake
+
 func enter() -> void:
     driving = true
     camera.current = true
@@ -168,6 +174,10 @@ func exit() -> void:
     driving = false
     camera.current = false
     velocity = Vector3.ZERO
+    mobile_gas = false
+    mobile_brake = false
+    mobile_drive = 0.0
+    joystick = Vector2.ZERO
 
 func is_driving() -> bool:
     return driving
@@ -181,14 +191,20 @@ func _physics_process(delta: float) -> void:
         input_vec = Input.get_vector("move_left","move_right","move_forward","move_back")
 
     var throttle := clamp(-input_vec.y, -1.0, 1.0)
-    if abs(mobile_drive) > 0.01:
+    if mobile_gas:
+        throttle = 1.0
+    elif mobile_brake:
+        throttle = 0.0
+    elif abs(mobile_drive) > 0.01:
         throttle = mobile_drive
     var steer := clamp(input_vec.x, -1.0, 1.0)
     var forward := -global_transform.basis.z
     var current_forward_speed := velocity.dot(forward)
     var target_speed := throttle * (max_speed if throttle >= 0.0 else reverse_speed)
 
-    if abs(throttle) > 0.08:
+    if mobile_brake:
+        velocity = velocity.move_toward(Vector3.ZERO, braking * 1.45 * delta)
+    elif abs(throttle) > 0.08:
         var rate := acceleration if abs(target_speed) > abs(current_forward_speed) else braking
         var new_speed := move_toward(current_forward_speed,target_speed,rate * delta)
         velocity = forward * new_speed
