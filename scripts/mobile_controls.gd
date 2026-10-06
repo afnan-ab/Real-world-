@@ -8,6 +8,8 @@ var joystick_touch_id := -1
 var look_touch_id := -1
 var look_last := Vector2.ZERO
 var knob: ColorRect
+var run_button: Button
+var run_touch := false
 
 func _ready() -> void:
     layer = 220
@@ -23,13 +25,21 @@ func _ready() -> void:
         knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
         add_child(knob)
 
+    run_button = get_node_or_null("Run") as Button
+    if run_button:
+        run_button.button_down.connect(_on_run_down)
+        run_button.button_up.connect(_on_run_up)
+
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
         return
+    var applied := joystick
+    if run_touch and applied.length() < 0.08:
+        applied = Vector2(0.0, -1.0)
     if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
-        player.vehicle.set_joystick(joystick)
+        player.vehicle.set_joystick(applied)
     else:
-        player.set_joystick(joystick)
+        player.set_joystick(applied)
 
 func _is_action_button(pos: Vector2) -> bool:
     return pos.x >= 1035.0 and pos.y >= 545.0
@@ -85,7 +95,22 @@ func _set_joystick_from_position(pos: Vector2) -> void:
 func _apply_joystick() -> void:
     if player == null:
         return
+    var applied := joystick
+    if run_touch and applied.length() < 0.08:
+        applied = Vector2(0.0, -1.0)
     if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
-        player.vehicle.set_joystick(joystick)
+        player.vehicle.set_joystick(applied)
     else:
-        player.set_joystick(joystick)
+        player.set_joystick(applied)
+
+func _on_run_down() -> void:
+    run_touch = true
+    if player:
+        player.set_sprint(true)
+    _apply_joystick()
+
+func _on_run_up() -> void:
+    run_touch = false
+    if player:
+        player.set_sprint(false)
+    _apply_joystick()
