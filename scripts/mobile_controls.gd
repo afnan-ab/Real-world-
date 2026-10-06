@@ -107,10 +107,14 @@ func _on_run_down() -> void:
     run_touch = true
     if player:
         player.set_sprint(true)
+    if run_button:
+        run_button.text = "STOP"
     _apply_joystick()
 
 func _on_run_up() -> void:
     run_touch = false
     if player:
         player.set_sprint(false)
+    if run_button:
+        run_button.text = "RUN"
     _apply_joystick()
