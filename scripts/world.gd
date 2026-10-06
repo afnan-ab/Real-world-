@@ -856,14 +856,13 @@ func set_weather(kind: String) -> void:
 func _on_hud_run_pressed() -> void:
     var p := get_node_or_null("Player")
     if p:
-        # RUN toggles sprint only; movement remains under joystick control.
-        p.set_sprint(not p.sprint_touch)
+        # Touch down/up on the mobile control layer owns sprint state.
         var b := get_node_or_null("HUD/Run") as Button
         if b:
-            b.text = "STOP" if p.sprint_touch else "RUN"
+            b.text = "STOP"
         var v := get_node_or_null("HUD/Vehicle") as Label
         if v:
-            v.text = "PLAYER  •  RUNNING" if p.sprint_touch else "PLAYER  •  READY"
+            v.text = "PLAYER  •  RUNNING"
 
 func _on_hud_act_pressed() -> void:
     var p := get_node_or_null("Player")
