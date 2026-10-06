@@ -47,6 +47,16 @@ var _collision_refresh_timer: float = 0.0
 # but scale shadow distance/softness with actual mobile performance.
 var _shadow_quality_level: int = 2
 
+# STEP 10: distance-based shadow caster LOD.
+# Small decorative geometry keeps its mesh, collision and gameplay, but stops
+# casting expensive dynamic shadows when far away. This reduces mobile GPU work
+# without removing any world content.
+const SHADOW_LOD_ENABLE_RADIUS := 55.0
+const SHADOW_LOD_DISABLE_RADIUS := 85.0
+const SHADOW_LOD_REFRESH_INTERVAL := 0.35
+var _shadow_lod_geometries: Array[GeometryInstance3D] = []
+var _shadow_lod_timer: float = 0.0
+
 # STEP 8: shared opaque material cache.
 # Reusing identical StandardMaterial3D resources reduces material/state changes
 # while keeping the same colors, roughness, metallic values and emissions.
@@ -76,6 +86,7 @@ func _ready() -> void:
     _refresh_dynamic_sector_cache(true)
     _configure_world_lod()
     _apply_step9_culling(self)
+    _apply_shadow_lod(true)
 
 
 func _configure_world_lod() -> void:
@@ -210,6 +221,25 @@ func _collision_lod_tick(delta: float) -> void:
             shape.disabled = false
         elif distance >= COLLISION_DISABLE_RADIUS:
             shape.disabled = true
+
+func _apply_shadow_lod(force: bool = false, delta: float = 0.0) -> void:
+    _shadow_lod_timer += delta
+    if not force and _shadow_lod_timer < SHADOW_LOD_REFRESH_INTERVAL:
+        return
+    _shadow_lod_timer = 0.0
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        _player_ref = get_node_or_null("Player") as Node3D
+    if _player_ref == null:
+        return
+    var player_pos := _player_ref.global_position
+    for geo in _shadow_lod_geometries:
+        if not is_instance_valid(geo):
+            continue
+        var distance := player_pos.distance_to(geo.global_position)
+        if distance <= SHADOW_LOD_ENABLE_RADIUS:
+            geo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+        elif distance >= SHADOW_LOD_DISABLE_RADIUS:
+            geo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func _adaptive_quality_tick(delta: float) -> void:
     # Adaptive quality: keep the full world loaded, but reduce expensive rendering
@@ -366,6 +396,13 @@ func _box(pos: Vector3, size: Vector3, material: Material, collision: bool = tru
         mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
     else:
         mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+    # STEP 10: register only small collidable props for shadow LOD.
+    # Large buildings/roads keep their normal shadow behavior.
+    if collision and max_dim <= 10.0:
+        _shadow_lod_geometries.append(mesh)
+        mesh.set_meta("shadow_lod", true)
+
     add_child(mesh)
     if collision:
         var body := StaticBody3D.new()
@@ -1090,6 +1127,7 @@ func toggle_vehicle(player: Node) -> String:
 func _process(delta: float) -> void:
     _adaptive_quality_tick(delta)
     _collision_lod_tick(delta)
+    _apply_shadow_lod(false, delta)
 
     var hud_speed := get_node_or_null("HUD/Speed") as Label
     var hud_player := get_node_or_null("Player")
