@@ -214,6 +214,35 @@ offset_right = -8.0
 theme_override_font_sizes/font_size = 15
 text = "DRIVE"
 
+[node name="Gas" type="Button" parent="HUD"]
+anchor_left = 0.80
+anchor_top = 0.70
+anchor_right = 0.89
+anchor_bottom = 0.82
+custom_minimum_size = Vector2(116, 82)
+theme_override_font_sizes/font_size = 16
+text = "GAS"
+visible = false
+
+[node name="Brake" type="Button" parent="HUD"]
+anchor_left = 0.90
+anchor_top = 0.70
+anchor_right = 0.99
+anchor_bottom = 0.82
+custom_minimum_size = Vector2(116, 82)
+theme_override_font_sizes/font_size = 16
+text = "BRAKE"
+visible = false
+
+[node name="ExitCar" type="Button" parent="HUD"]
+anchor_left = 0.90
+anchor_top = 0.84
+anchor_right = 0.99
+anchor_bottom = 0.96
+custom_minimum_size = Vector2(116, 78)
+theme_override_font_sizes/font_size = 15
+text = "EXIT"
+visible = false
 [node name="Jump" type="Button" parent="HUD"]
 anchor_left = 0.90
 anchor_top = 0.84
