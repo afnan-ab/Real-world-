@@ -147,54 +147,73 @@ theme_override_font_sizes/font_size = 28
 text = "0 km/h"
 
 [node name="JoystickZone" type="Control" parent="HUD"]
+anchor_left = 0.0
+anchor_top = 0.68
+anchor_right = 0.18
+anchor_bottom = 0.98
 offset_left = 24.0
-offset_top = 492.0
-offset_right = 212.0
-offset_bottom = 688.0
+offset_right = -12.0
+offset_top = 0.0
+offset_bottom = 0.0
 mouse_filter = 0
 z_index = 5
 
 [node name="LookZone" type="Control" parent="HUD"]
-anchor_left = 0.54
+anchor_left = 0.30
 anchor_top = 0.18
-anchor_right = 0.82
+anchor_right = 0.80
 anchor_bottom = 0.98
 mouse_filter = 0
 z_index = 4
 
 [node name="Joystick" type="ColorRect" parent="HUD"]
+anchor_left = 0.0
+anchor_top = 0.71
+anchor_right = 0.18
+anchor_bottom = 0.94
 offset_left = 48.0
-offset_top = 520.0
-offset_right = 188.0
-offset_bottom = 660.0
+offset_right = -36.0
+offset_top = 0.0
+offset_bottom = 0.0
 color = Color(0.08, 0.12, 0.14, 0.32)
 mouse_filter = 2
 
 [node name="Run" type="Button" parent="HUD"]
-offset_left = 1048.0
-offset_top = 610.0
-offset_right = 1160.0
-offset_bottom = 688.0
+anchor_left = 0.81
+anchor_top = 0.82
+anchor_right = 0.90
+anchor_bottom = 0.95
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+custom_minimum_size = Vector2(116, 78)
 theme_override_font_sizes/font_size = 16
 text = "RUN"
 
 [node name="Act" type="Button" parent="HUD"]
-offset_left = 1148.0
-offset_top = 560.0
-offset_right = 1260.0
-offset_bottom = 672.0
+anchor_left = 0.90
+anchor_top = 0.70
+anchor_right = 0.99
+anchor_bottom = 0.86
+offset_left = -4.0
+offset_top = 0.0
+offset_right = -8.0
+offset_bottom = 0.0
+custom_minimum_size = Vector2(116, 112)
 theme_override_font_sizes/font_size = 18
 text = "ACT"
 
 [node name="Jump" type="Button" parent="HUD"]
-offset_left = 1148.0
-offset_top = 680.0
-offset_right = 1260.0
-offset_bottom = 724.0
+anchor_left = 0.90
+anchor_top = 0.86
+anchor_right = 0.99
+anchor_bottom = 0.96
+offset_left = -4.0
+offset_top = 0.0
+offset_right = -8.0
+offset_bottom = 0.0
+custom_minimum_size = Vector2(116, 76)
 theme_override_font_sizes/font_size = 14
 text = "JUMP"
 
-
-[connection signal="pressed" from="HUD/Run" to="." method="_on_hud_run_pressed"]
-[connection signal="pressed" from="HUD/Act" to="." method="_on_hud_act_pressed"]
-[connection signal="pressed" from="HUD/Jump" to="." method="_on_hud_jump_pressed"]
