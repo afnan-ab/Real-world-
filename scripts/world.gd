@@ -786,6 +786,16 @@ func toggle_vehicle(player: Node) -> String:
 func _process(delta: float) -> void:
     _adaptive_quality_tick(delta)
 
+    var hud_speed := get_node_or_null("HUD/Speed") as Label
+    var hud_player := get_node_or_null("Player")
+    if hud_speed and hud_player:
+        var shown_speed := 0.0
+        if hud_player.in_vehicle and hud_player.vehicle and is_instance_valid(hud_player.vehicle):
+            shown_speed = hud_player.vehicle.speed_kmh
+        else:
+            shown_speed = hud_player.velocity.length() * 3.6
+        hud_speed.text = "%d km/h" % int(shown_speed)
+
     time_of_day = fmod(time_of_day + delta * 0.045, 24.0)
     var angle := (time_of_day / 24.0) * TAU
     sun.rotation_degrees.x = -32.0 + sin(angle) * 55.0
@@ -859,6 +869,9 @@ func _on_hud_act_pressed() -> void:
     var p := get_node_or_null("Player")
     if p:
         var result := toggle_vehicle(p)
+        if result == "WALK CLOSER TO THE CAR":
+            start_next_mission()
+            result = "MISSION STARTED  •  " + mission_name
         var b := get_node_or_null("HUD/Act") as Button
         if b:
             b.text = "EXIT" if p.in_vehicle else "ACT"
@@ -872,9 +885,8 @@ func _on_hud_act_pressed() -> void:
 func _on_hud_jump_pressed() -> void:
     var p := get_node_or_null("Player")
     if p and not p.in_vehicle:
-        # A tap always produces a clear action; if grounded, jump immediately.
-        if p.is_on_floor():
-            p.velocity.y = 8.0
+        # Mobile jump must respond immediately even when floor contact is delayed.
+        p.velocity.y = 8.0
         var m := get_node_or_null("HUD/Mission") as Label
         if m:
             m.text = "ACTION  •  JUMP"
