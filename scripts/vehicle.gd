@@ -16,6 +16,7 @@ var speed_kmh: float = 0.0
 var setup_color: Color = Color("#b52f32")
 var front_wheels: Array[MeshInstance3D] = []
 var suspension_phase: float = 0.0
+var mobile_drive := 0.0
 
 func _ready() -> void:
     var body_shape := BoxShape3D.new()
@@ -156,6 +157,9 @@ func _build_vehicle() -> void:
 func set_joystick(v: Vector2) -> void:
     joystick = v
 
+func set_mobile_drive(value: float) -> void:
+    mobile_drive = clamp(value, -1.0, 1.0)
+
 func enter() -> void:
     driving = true
     camera.current = true
@@ -177,6 +181,8 @@ func _physics_process(delta: float) -> void:
         input_vec = Input.get_vector("move_left","move_right","move_forward","move_back")
 
     var throttle := clamp(-input_vec.y, -1.0, 1.0)
+    if abs(mobile_drive) > 0.01:
+        throttle = mobile_drive
     var steer := clamp(input_vec.x, -1.0, 1.0)
     var forward := -global_transform.basis.z
     var current_forward_speed := velocity.dot(forward)
