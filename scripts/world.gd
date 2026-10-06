@@ -347,13 +347,92 @@ func _make_tree(pos: Vector3, s: float = 1.0) -> void:
         root.add_child(crown)
 
 func _make_forests() -> void:
-    for i in range(150):
-        var p := Vector3(rng.randf_range(-205,205), 0, rng.randf_range(-205,205))
+    # Batch the forest into regional MultiMeshes. This keeps the same visible
+    # tree count while replacing hundreds of individual render nodes with a
+    # small number of GPU-instanced batches.
+    var regions := [
+        Rect2(Vector2(-205, -205), Vector2(135, 410)),
+        Rect2(Vector2(-70, -205), Vector2(140, 410)),
+        Rect2(Vector2(70, -205), Vector2(135, 410))
+    ]
+    for region_index in range(regions.size()):
+        _make_forest_multimesh(regions[region_index], region_index)
+
+func _make_forest_multimesh(region: Rect2, region_index: int) -> void:
+    var transforms: Array[Transform3D] = []
+    var attempts := 0
+    while transforms.size() < 50 and attempts < 500:
+        attempts += 1
+        var x := rng.randf_range(region.position.x, region.end.x)
+        var z := rng.randf_range(region.position.y, region.end.y)
+        var p := Vector3(x, 0, z)
         if p.length() < 54.0:
             continue
         if p.x > 18 and p.x < 142 and p.z < -28 and p.z > -112:
             continue
-        _make_tree(p, rng.randf_range(0.75, 1.55))
+        var s := rng.randf_range(0.75, 1.55)
+        var basis := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(Vector3.ONE * s)
+        transforms.append(Transform3D(basis, Vector3(p.x, _height(p.x, p.z), p.z)))
+    if transforms.is_empty():
+        return
+
+    var batch := MultiMeshInstance3D.new()
+    batch.name = "ForestMultiMesh_%d" % region_index
+    batch.visibility_range_end = 210.0
+
+    var mm := MultiMesh.new()
+    mm.transform_format = MultiMesh.TRANSFORM_3D
+    mm.instance_count = transforms.size()
+
+    # Two-surface tree: trunk + three foliage tiers, packed into one mesh.
+    # Materials are shared by the whole batch, which is exactly what makes
+    # MultiMesh efficient.
+    var tree_mesh := ArrayMesh.new()
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    _append_tree_geometry(st)
+    var mesh := st.commit()
+    mm.mesh = mesh
+
+    for i in range(transforms.size()):
+        mm.set_instance_transform(i, transforms[i])
+
+    batch.multimesh = mm
+    add_child(batch)
+
+func _append_tree_geometry(st: SurfaceTool) -> void:
+    var trunk := CylinderMesh.new()
+    trunk.top_radius = 0.13
+    trunk.bottom_radius = 0.28
+    trunk.height = 3.1
+    trunk.radial_segments = 8
+    var crown := CylinderMesh.new()
+    crown.top_radius = 0.02
+    crown.bottom_radius = 1.35
+    crown.height = 2.8
+    crown.radial_segments = 8
+    # SurfaceTool cannot directly append primitive resources, so build a
+    # compact low-poly tree from repeated cone vertices.
+    _append_cone(st, 0.28, 0.13, 3.1, 8, 0.0, Color("#493326"))
+    _append_cone(st, 1.35, 0.02, 2.8, 8, 3.6, Color("#235437"))
+    _append_cone(st, 1.10, 0.02, 2.6, 8, 4.8, Color("#235437"))
+    _append_cone(st, 0.85, 0.02, 2.4, 8, 5.9, Color("#2e6641"))
+
+func _append_cone(st: SurfaceTool, bottom_radius: float, top_radius: float, height: float, segments: int, center_y: float, color: Color) -> void:
+    var half := height * 0.5
+    for i in range(segments):
+        var a0 := TAU * float(i) / segments
+        var a1 := TAU * float(i + 1) / segments
+        var v0 := Vector3(cos(a0) * bottom_radius, center_y - half, sin(a0) * bottom_radius)
+        var v1 := Vector3(cos(a1) * bottom_radius, center_y - half, sin(a1) * bottom_radius)
+        var v2 := Vector3(cos(a1) * top_radius, center_y + half, sin(a1) * top_radius)
+        var v3 := Vector3(cos(a0) * top_radius, center_y + half, sin(a0) * top_radius)
+        st.set_color(color); st.add_vertex(v0)
+        st.set_color(color); st.add_vertex(v1)
+        st.set_color(color); st.add_vertex(v2)
+        st.set_color(color); st.add_vertex(v0)
+        st.set_color(color); st.add_vertex(v2)
+        st.set_color(color); st.add_vertex(v3)
 
 func _make_road(pos: Vector3, size: Vector3) -> void:
     _box(pos + Vector3(0,0.12,0), size, _mat(Color("#1e2225"), 0.92), false)
