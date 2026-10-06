@@ -35,34 +35,43 @@ func _ready() -> void:
     _build_human()
 
 func _build_human() -> void:
+    # STEP 17: improved low-poly player character.
+    # Keeps the existing lightweight procedural approach and walking animation,
+    # but adds better proportions, layered clothing, rounded head and shoes.
     visual = Node3D.new()
     visual.name = "PlayerVisual"
     visual.position.y = 0.9
     add_child(visual)
 
-    var skin := _mat(Color("#b97858"), 0.62)
-    var shirt := _mat(Color("#263b52"), 0.78)
-    var pants := _mat(Color("#24282d"), 0.90)
-    var shoes := _mat(Color("#111315"), 0.94)
-    var hair := _mat(Color("#16181a"), 0.92)
-    var skin_detail := _mat(Color("#9d654d"), 0.70)
-    var shirt_dark := _mat(Color("#1d2d40"), 0.82)
+    var skin := _mat(Color("#b97858"), 0.68)
+    var skin_dark := _mat(Color("#8e5a46"), 0.76)
+    var shirt := _mat(Color("#263b52"), 0.82)
+    var shirt_dark := _mat(Color("#1d2d40"), 0.88)
+    var pants := _mat(Color("#24282d"), 0.92)
+    var shoes := _mat(Color("#111315"), 0.96)
+    var sole := _mat(Color("#25282a"), 0.88)
+    var hair := _mat(Color("#16181a"), 0.94)
+    var eye := _mat(Color("#202020"), 0.35)
 
-    _part(BoxMesh.new(), Vector3(0,0.55,0), Vector3(0.52,0.9,0.34), shirt)
-    _part(BoxMesh.new(), Vector3(0,0.98,0), Vector3(0.58,0.18,0.38), shirt_dark)
-    left_arm = _part(BoxMesh.new(), Vector3(-0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
-    right_arm = _part(BoxMesh.new(), Vector3(0.34,0.52,0), Vector3(0.15,0.72,0.15), shirt)
-    _part(SphereMesh.new(), Vector3(0,1.23,-0.19), Vector3(0.12,0.07,0.05), skin_detail, true)
-    _part(SphereMesh.new(), Vector3(0,1.25,0), Vector3(0.38,0.38,0.38), skin, true)
-    _part(SphereMesh.new(), Vector3(0,1.45,0), Vector3(0.39,0.16,0.39), hair, true)
-    _part(SphereMesh.new(), Vector3(-0.13,1.29,-0.18), Vector3(0.045,0.045,0.045), _mat(Color("#202020"),0.35), true)
-    _part(SphereMesh.new(), Vector3(0.13,1.29,-0.18), Vector3(0.045,0.045,0.045), _mat(Color("#202020"),0.35), true)
-    left_leg = _part(BoxMesh.new(), Vector3(-0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
-    right_leg = _part(BoxMesh.new(), Vector3(0.20,-0.45,0), Vector3(0.16,0.9,0.16), pants)
-    _part(BoxMesh.new(), Vector3(-0.53,0.35,0), Vector3(0.14,0.68,0.14), skin)
-    _part(BoxMesh.new(), Vector3(0.53,0.35,0), Vector3(0.14,0.68,0.14), skin)
-    _part(BoxMesh.new(), Vector3(-0.20,-0.92,-0.06), Vector3(0.22,0.13,0.42), shoes)
-    _part(BoxMesh.new(), Vector3(0.20,-0.92,-0.06), Vector3(0.22,0.13,0.42), shoes)
+    _part(BoxMesh.new(), Vector3(0,0.55,0), Vector3(0.54,0.90,0.38), shirt)
+    _part(BoxMesh.new(), Vector3(0,1.02,0), Vector3(0.60,0.18,0.42), shirt_dark)
+    left_arm = _part(BoxMesh.new(), Vector3(-0.36,0.54,0), Vector3(0.16,0.72,0.17), shirt)
+    right_arm = _part(BoxMesh.new(), Vector3(0.36,0.54,0), Vector3(0.16,0.72,0.17), shirt)
+    _part(SphereMesh.new(), Vector3(-0.36,0.15,-0.01), Vector3(0.17,0.22,0.18), skin, true)
+    _part(SphereMesh.new(), Vector3(0.36,0.15,-0.01), Vector3(0.17,0.22,0.18), skin, true)
+
+    left_leg = _part(BoxMesh.new(), Vector3(-0.20,-0.40,0), Vector3(0.19,0.88,0.19), pants)
+    right_leg = _part(BoxMesh.new(), Vector3(0.20,-0.40,0), Vector3(0.19,0.88,0.19), pants)
+    _part(BoxMesh.new(), Vector3(-0.20,-0.90,-0.07), Vector3(0.25,0.14,0.46), shoes)
+    _part(BoxMesh.new(), Vector3(0.20,-0.90,-0.07), Vector3(0.25,0.14,0.46), shoes)
+    _part(BoxMesh.new(), Vector3(-0.20,-0.98,-0.07), Vector3(0.27,0.05,0.48), sole)
+    _part(BoxMesh.new(), Vector3(0.20,-0.98,-0.07), Vector3(0.27,0.05,0.48), sole)
+
+    _part(SphereMesh.new(), Vector3(0,1.34,0), Vector3(0.40,0.40,0.40), skin, true)
+    _part(SphereMesh.new(), Vector3(0,1.55,0.01), Vector3(0.41,0.18,0.41), hair, true)
+    _part(SphereMesh.new(), Vector3(0,1.27,-0.19), Vector3(0.13,0.08,0.06), skin_dark, true)
+    _part(SphereMesh.new(), Vector3(-0.13,1.37,-0.18), Vector3(0.04,0.04,0.04), eye, true)
+    _part(SphereMesh.new(), Vector3(0.13,1.37,-0.18), Vector3(0.04,0.04,0.04), eye, true)
 
 func _part(mesh: Mesh, pos: Vector3, scale_v: Vector3, material: Material, sphere: bool = false) -> MeshInstance3D:
     var mi := MeshInstance3D.new()
