@@ -23,6 +23,10 @@ const NPC_SIMULATION_RADIUS := 95.0
 const NPC_REDUCED_RADIUS := 145.0
 const TRAFFIC_SIMULATION_RADIUS := 155.0
 const TRAFFIC_REDUCED_RADIUS := 215.0
+const TRAFFIC_INTERSECTION_X := 0.0
+const TRAFFIC_INTERSECTION_Z := 28.0
+var traffic_signal_time := 0.0
+var traffic_signal_green_x := true
 const REDUCED_SIMULATION_INTERVAL := 0.12
 var _reduced_simulation_accumulator: float = 0.0
 
@@ -971,25 +975,32 @@ func _local_box(root: Node3D, pos: Vector3, size: Vector3, mat: Material, collis
         root.add_child(body)
 
 func _make_traffic() -> void:
+    # Two lanes per major road with lightweight signal behavior.
     var routes := [
-        {"axis":"x", "z":28.0, "from":-175.0, "to":175.0, "speed":7.0},
-        {"axis":"x", "z":-58.0, "from":-110.0, "to":110.0, "speed":5.8},
-        {"axis":"z", "x":-62.0, "from":-110.0, "to":125.0, "speed":6.4},
-        {"axis":"z", "x":66.0, "from":-90.0, "to":105.0, "speed":6.0}
+        {"axis":"x", "z":23.2, "from":-175.0, "to":175.0, "speed":7.0, "dir":1},
+        {"axis":"x", "z":32.8, "from":175.0, "to":-175.0, "speed":6.5, "dir":-1},
+        {"axis":"x", "z":-53.8, "from":-110.0, "to":110.0, "speed":5.8, "dir":1},
+        {"axis":"x", "z":-62.2, "from":110.0, "to":-110.0, "speed":5.4, "dir":-1},
+        {"axis":"z", "x":-57.2, "from":-110.0, "to":125.0, "speed":6.4, "dir":1},
+        {"axis":"z", "x":-66.8, "from":125.0, "to":-110.0, "speed":6.0, "dir":-1},
+        {"axis":"z", "x":61.2, "from":-90.0, "to":105.0, "speed":6.0, "dir":1},
+        {"axis":"z", "x":70.8, "from":105.0, "to":-90.0, "speed":5.6, "dir":-1}
     ]
-    var colors := [Color("#d7d2c8"),Color("#294e78"),Color("#a52f2f"),Color("#30343a"),Color("#6c5737")]
-    for i in range(8):
+    var colors := [Color("#d7d2c8"),Color("#294e78"),Color("#a52f2f"),Color("#30343a"),Color("#6c5737"),Color("#6b7d80")]
+    for i in range(16):
         var r: Dictionary = routes[i % routes.size()]
-        var t := float(i) / 12.0
+        var t := fmod(float(i) * 0.071, 1.0)
         var car: Node3D
+        var heading := 0.0
         if r["axis"] == "x":
             var x: float = lerp(float(r["from"]), float(r["to"]), t)
-            car = _make_car(Vector3(x,0.45,float(r["z"])), colors[i % colors.size()], 0.0)
+            heading = 0.0 if int(r["dir"]) > 0 else PI
+            car = _make_car(Vector3(x,0.45,float(r["z"])), colors[i % colors.size()], heading)
         else:
             var z: float = lerp(float(r["from"]), float(r["to"]), t)
-            car = _make_car(Vector3(float(r["x"]),0.45,z), colors[i % colors.size()], PI/2.0)
-        traffic.append({"node":car,"route":r,"phase":t,"speed":float(r["speed"]) * rng.randf_range(0.82,1.15)})
-
+            heading = PI/2.0 if int(r["dir"]) > 0 else -PI/2.0
+            car = _make_car(Vector3(float(r["x"]),0.45,z), colors[i % colors.size()], heading)
+        traffic.append({"node":car,"route":r,"phase":t,"speed":float(r["speed"]) * rng.randf_range(0.86,1.12)})
 func _make_cars() -> void:
     _make_car(Vector3(-32,0.45,29), Color("#b92c2c"), 0.0)
     _make_car(Vector3(42,0.45,29), Color("#2b5ea8"), 0.0)
@@ -1396,6 +1407,9 @@ func _process(delta: float) -> void:
 
     _refresh_dynamic_sector_cache()
 
+    traffic_signal_time = fmod(traffic_signal_time + simulation_delta, 12.0)
+    traffic_signal_green_x = traffic_signal_time < 6.0
+
     var t := Time.get_ticks_msec() * 0.001
     # STEP 4 + STEP 5 + STEP 8: sector-aware candidates and shared materials.
     # Nearby actors stay smooth while distant actors cost almost nothing until
@@ -1440,8 +1454,32 @@ func _process(delta: float) -> void:
         if abs(route_span) < 0.001:
             continue
 
-        var phase: float = fmod(float(data["phase"]) + float(data["speed"]) * step_delta / route_span, 1.0)
-        if phase < 0.0:
+        var phase: float = float(data["phase"])
+        var desired_speed: float = float(data["speed"])
+        var should_stop := false
+        if route["axis"] == "x":
+            var x_now := lerp(float(route["from"]), float(route["to"]), phase)
+            if abs(x_now - TRAFFIC_INTERSECTION_X) < 12.0 and abs(float(route["z"]) - TRAFFIC_INTERSECTION_Z) < 6.0:
+                should_stop = not traffic_signal_green_x
+                if int(route["dir"]) > 0 and x_now > TRAFFIC_INTERSECTION_X:
+                    should_stop = false
+                elif int(route["dir"]) < 0 and x_now < TRAFFIC_INTERSECTION_X:
+                    should_stop = false
+        else:
+            var z_now := lerp(float(route["from"]), float(route["to"]), phase)
+            if abs(z_now - TRAFFIC_INTERSECTION_Z) < 12.0 and abs(float(route["x"]) - TRAFFIC_INTERSECTION_X) < 8.0:
+                should_stop = traffic_signal_green_x
+                if int(route["dir"]) > 0 and z_now > TRAFFIC_INTERSECTION_Z:
+                    should_stop = false
+                elif int(route["dir"]) < 0 and z_now < TRAFFIC_INTERSECTION_Z:
+                    should_stop = false
+        if should_stop:
+            desired_speed = 0.0
+        var direction := 1.0 if int(route["dir"]) > 0 else -1.0
+        phase += (desired_speed * step_delta / abs(route_span)) * direction
+        if phase > 1.0:
+            phase -= 1.0
+        elif phase < 0.0:
             phase += 1.0
 
         if route["axis"] == "x":
