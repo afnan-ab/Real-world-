@@ -23,10 +23,13 @@ var mission_label: Label
 var vehicle_label: Label
 var speed_label: Label
 var hud_status: Label
+var minimap_player_dot: ColorRect
+var minimap_waypoint_dot: ColorRect
+var minimap_range: float = 220.0
+var minimap_origin := Vector2(1015,287)
 var _ui_refresh_timer: float = 0.0
 
 func _ready() -> void:
-    # Keep HUD above every 3D node and Android viewport layer.
     layer = 50
     player = get_parent().get_node("Player")
     world = get_parent()
@@ -86,7 +89,6 @@ func _build_ui() -> void:
     var stars := _label("WANTED  ☆ ☆ ☆ ☆ ☆",Vector2(470,24),17)
     stars.add_theme_color_override("font_color",Color("#f0d58a"))
     wanted_label = stars
-
     location_label = _label("DOWNTOWN",Vector2(470,50),16)
 
     _panel(Vector2(1000,18),Vector2(250,205),0.48)
@@ -97,7 +99,6 @@ func _build_ui() -> void:
     var snow := _button("❄  Snow",Vector2(1010,140))
     snow.pressed.connect(func(): world.set_weather("snow"); weather_label.text="WEATHER  •  SNOW")
 
-    # Mobile shooter-style virtual joystick: soft circular base + springy knob.
     joystick_base = _round_panel(Vector2(54,512),Vector2(150,150),Color(0.10,0.14,0.16,0.22),75)
     joystick_base.pivot_offset = Vector2(75,75)
     knob = _round_panel(Vector2(104,562),Vector2(50,50),Color(0.85,0.92,0.95,0.42),25)
@@ -120,7 +121,6 @@ func _build_ui() -> void:
     var hint := _label("LEFT STICK  MOVE   •   RIGHT DRAG  CAMERA",Vector2(28,686),13)
     hint.modulate = Color(1,1,1,0.72)
 
-
 func _build_minimap() -> void:
     _panel(Vector2(1000,235),Vector2(250,185),0.48)
     _label("CITY MAP",Vector2(1018,262),15)
@@ -129,22 +129,22 @@ func _build_minimap() -> void:
     map_bg.size=Vector2(220,130)
     map_bg.color=Color(0.06,0.09,0.10,0.88)
     add_child(map_bg)
-    # Main roads.
     var road_h:=ColorRect.new()
     road_h.position=Vector2(1025,342); road_h.size=Vector2(200,8)
     road_h.color=Color("#6e7476"); add_child(road_h)
     var road_v:=ColorRect.new()
     road_v.position=Vector2(1110,296); road_v.size=Vector2(8,112)
     road_v.color=Color("#6e7476"); add_child(road_v)
-    # Lake.
     var lake:=ColorRect.new()
     lake.position=Vector2(1160,300); lake.size=Vector2(60,38)
     lake.color=Color("#1b6677"); add_child(lake)
-    # Player marker.
-    var player_dot:=ColorRect.new()
-    player_dot.position=Vector2(1111,338); player_dot.size=Vector2(7,7)
-    player_dot.color=Color("#f4d35e"); add_child(player_dot)
-    # Civic markers.
+    minimap_player_dot=ColorRect.new()
+    minimap_player_dot.position=Vector2(1111,338); minimap_player_dot.size=Vector2(7,7)
+    minimap_player_dot.color=Color("#f4d35e"); add_child(minimap_player_dot)
+    minimap_waypoint_dot=ColorRect.new()
+    minimap_waypoint_dot.position=Vector2(1225,405); minimap_waypoint_dot.size=Vector2(8,8)
+    minimap_waypoint_dot.color=Color("#65e6ff"); add_child(minimap_waypoint_dot)
+    minimap_waypoint_dot.visible=false
     for p in [Vector2(1060,325),Vector2(1165,325),Vector2(1060,375),Vector2(1165,375)]:
         var dot:=ColorRect.new()
         dot.position=p; dot.size=Vector2(6,6)
@@ -156,7 +156,6 @@ func _build_jobs_panel() -> void:
     _label("AVAILABLE LOCATIONS",Vector2(888,500),16)
     job_label=_label("CITY HOSPITAL\nPOLICE HQ\nFIRE STATION\nBANK  •  MARINA",Vector2(888,528),14)
     job_label.add_theme_color_override("font_color",Color("#dce5e4"))
-
 
 func _circle_button(text: String, center: Vector2, size: float) -> Button:
     var b := Button.new()
@@ -264,9 +263,40 @@ func _process(delta: float) -> void:
                 speed_label.text = "0 km/h"
         if mission_label and world.mission_active:
             mission_label.text = "MISSION  •  " + world.get_mission_status(player.global_position)
+        _update_minimap()
+
+func _update_minimap() -> void:
+    if not minimap_player_dot or not player:
+        return
+    var map_size := Vector2(220,130)
+    var map_center := minimap_origin + map_size * 0.5
+    var world_pos: Vector3 = player.global_position
+    var px := map_center.x + clamp(world_pos.x / minimap_range, -0.5, 0.5) * map_size.x
+    var py := map_center.y + clamp(world_pos.z / minimap_range, -0.5, 0.5) * map_size.y
+    minimap_player_dot.position = Vector2(px - 3.5, py - 3.5)
+    if not minimap_waypoint_dot:
+        return
+    if not world.mission_active:
+        minimap_waypoint_dot.visible = false
+        return
+    var waypoint := _get_mission_waypoint()
+    var dx := clamp((waypoint.x - world_pos.x) / minimap_range, -0.5, 0.5)
+    var dz := clamp((waypoint.z - world_pos.z) / minimap_range, -0.5, 0.5)
+    minimap_waypoint_dot.position = Vector2(map_center.x + dx * map_size.x - 4.0, map_center.y + dz * map_size.y - 4.0)
+    minimap_waypoint_dot.visible = true
+
+func _get_mission_waypoint() -> Vector3:
+    var index := int(world.mission_index) % 5
+    var points := [
+        Vector3(0, 0, 28),
+        Vector3(120, 0, 72),
+        Vector3(-72, 0, -55),
+        Vector3(-125, 0, 92),
+        Vector3(82, 0, -82)
+    ]
+    return points[index]
 
 func _input(event: InputEvent) -> void:
-    # Read touch before CanvasLayer controls consume it.
     if event is InputEventScreenTouch:
         var pos := event.position
         if pos.x < 330.0 and pos.y > 430.0:
@@ -280,15 +310,12 @@ func _input(event: InputEvent) -> void:
                 _joystick_touch_anim(false)
             get_viewport().set_input_as_handled()
             return
-
-        # Right half is the free camera-look area; avoid the top HUD.
         if pos.x > 700.0 and pos.y > 210.0 and pos.y < 690.0:
             look_dragging = event.pressed
             if look_dragging:
                 look_last = pos
             get_viewport().set_input_as_handled()
             return
-
     elif event is InputEventScreenDrag:
         if dragging:
             var v: Vector2 = (event.position - joystick_center) / 72.0
@@ -302,7 +329,6 @@ func _input(event: InputEvent) -> void:
             player.look_camera(delta_look)
             look_last = event.position
             get_viewport().set_input_as_handled()
-
 
 func _joystick_touch_anim(active: bool) -> void:
     if not joystick_base or not knob:
