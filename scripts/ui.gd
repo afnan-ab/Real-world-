@@ -24,6 +24,7 @@ var vehicle_label: Label
 var speed_label: Label
 var hud_status: Label
 var minimap_player_dot: ColorRect
+var minimap_player_arrow: Label
 var minimap_waypoint_dot: ColorRect
 var minimap_range: float = 220.0
 var minimap_origin := Vector2(1015,287)
@@ -136,6 +137,10 @@ func _build_minimap() -> void:
     minimap_player_dot=ColorRect.new()
     minimap_player_dot.position=Vector2(1111,338); minimap_player_dot.size=Vector2(7,7)
     minimap_player_dot.color=Color("#f4d35e"); add_child(minimap_player_dot)
+    minimap_player_arrow = _label("▲", Vector2(1110,329), 12)
+    minimap_player_arrow.add_theme_color_override("font_color", Color("#f4d35e"))
+    minimap_player_arrow.size = Vector2(12,12)
+    minimap_player_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     minimap_waypoint_dot=ColorRect.new()
     minimap_waypoint_dot.position=Vector2(1225,405); minimap_waypoint_dot.size=Vector2(8,8)
     minimap_waypoint_dot.color=Color("#65e6ff"); add_child(minimap_waypoint_dot)
@@ -269,6 +274,9 @@ func _update_minimap() -> void:
     var px := map_center.x + clamp(world_pos.x / minimap_range, -0.5, 0.5) * map_size.x
     var py := map_center.y + clamp(world_pos.z / minimap_range, -0.5, 0.5) * map_size.y
     minimap_player_dot.position = Vector2(px - 3.5, py - 3.5)
+    if minimap_player_arrow:
+        minimap_player_arrow.position = Vector2(px - 6.0, py - 14.0)
+        minimap_player_arrow.rotation = -player.camera_yaw
     if not minimap_waypoint_dot:
         return
     if not world.mission_active:
