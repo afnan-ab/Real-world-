@@ -73,6 +73,54 @@ var _vehicle_lod_timer: float = 0.0
 # while keeping the same colors, roughness, metallic values and emissions.
 var _material_cache: Dictionary = {}
 
+# STEP 19: lightweight mission/objective HUD data.
+# Keeps gameplay readable without adding heavy UI processing.
+var current_objective := "EXPLORE THE CITY"
+var mission_index := 0
+var mission_active := false
+var mission_targets := [
+    "REACH THE CITY CENTER",
+    "VISIT THE WATERFRONT",
+    "DRIVE TO THE PARK",
+    "REACH THE MOUNTAIN ROAD",
+    "VISIT THE INDUSTRIAL AREA"
+]
+
+func _update_objective_hud() -> void:
+    var hud := get_node_or_null("HUD")
+    if hud == null:
+        return
+    var mission_label := hud.get_node_or_null("Mission") as Label
+    if mission_label:
+        mission_label.text = ("MISSION  •  " + current_objective) if mission_active else ("FREE ROAM  •  " + current_objective)
+
+func _set_next_objective() -> void:
+    mission_index = (mission_index + 1) % mission_targets.size()
+    current_objective = mission_targets[mission_index]
+    mission_active = true
+    _update_objective_hud()
+
+func _objective_distance() -> float:
+    if _player_ref == null or not is_instance_valid(_player_ref):
+        return 999999.0
+    var target := Vector3.ZERO
+    match mission_index:
+        0: target = Vector3(0.0, 0.0, 28.0)
+        1: target = Vector3(92.0, 0.0, -42.0)
+        2: target = Vector3(-65.0, 0.0, 18.0)
+        3: target = Vector3(-120.0, 0.0, -110.0)
+        4: target = Vector3(68.0, 0.0, 72.0)
+    return _player_ref.global_position.distance_to(target)
+
+func _process_objective() -> void:
+    if not mission_active:
+        return
+    if _objective_distance() < 14.0:
+        current_objective = "OBJECTIVE COMPLETE  •  EXPLORE"
+        mission_active = false
+        _update_objective_hud()
+
+
 func _ready() -> void:
     rng.seed = 190428
     _setup_environment()
@@ -101,6 +149,7 @@ func _ready() -> void:
     _apply_step9_culling(self)
     _apply_shadow_lod(true)
     _apply_vehicle_lod(true)
+    _update_objective_hud()
 
 
 func _configure_world_lod() -> void:
@@ -1309,6 +1358,7 @@ func _step18_visual_update() -> void:
 
 
 func _process(delta: float) -> void:
+    _process_objective()
     _adaptive_quality_tick(delta)
     _collision_lod_tick(delta)
     _apply_shadow_lod(false, delta)
