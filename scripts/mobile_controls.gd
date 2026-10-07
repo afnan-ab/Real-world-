@@ -102,6 +102,34 @@ func _ready() -> void:
         exit_car_button.mouse_filter = Control.MOUSE_FILTER_STOP
         exit_car_button.pressed.connect(_on_exit_car_pressed)
 
+func _layout_mobile_hud() -> void:
+    var size := get_viewport().get_visible_rect().size
+    var short_side := min(size.x, size.y)
+    var button_h := clamp(short_side * 0.105, 58.0, 86.0)
+    var button_w := clamp(short_side * 0.145, 82.0, 118.0)
+    var margin := clamp(short_side * 0.026, 16.0, 28.0)
+    if run_button and not player.in_vehicle:
+        run_button.size = Vector2(button_w, button_h)
+        run_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h - margin)
+    if jump_button and not player.in_vehicle:
+        jump_button.size = Vector2(button_w, button_h)
+        jump_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
+    if action_button and not player.in_vehicle:
+        action_button.size = Vector2(button_w, button_h)
+        action_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
+    if drive_button and not player.in_vehicle:
+        drive_button.size = Vector2(button_w, button_h)
+        drive_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
+    if gas_button and player.in_vehicle:
+        gas_button.size = Vector2(button_w, button_h)
+        gas_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
+    if brake_button and player.in_vehicle:
+        brake_button.size = Vector2(button_w, button_h)
+        brake_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
+    if exit_car_button and player.in_vehicle:
+        exit_car_button.size = Vector2(button_w, button_h)
+        exit_car_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
+
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
         player = world.get_node_or_null("Player")
@@ -109,6 +137,7 @@ func _process(_delta: float) -> void:
             return
 
     _update_context_controls()
+    _layout_mobile_hud()
     _apply_joystick()
 
 func _update_context_controls() -> void:
