@@ -950,6 +950,7 @@ func _make_cars() -> void:
 
 func _make_person(pos: Vector3, shirt_color: Color, scale_v: float = 1.0) -> Node3D:
     var root := Node3D.new()
+    root.set_script(load("res://scripts/npc.gd"))
     root.position = pos
     root.scale = Vector3.ONE * scale_v
     root.visibility_range_end = 150.0
@@ -987,11 +988,25 @@ func _local_person_part(root: Node3D, pos: Vector3, scale_v: Vector3, mat: Mater
     root.add_child(mi)
 
 func _make_pedestrians() -> void:
-    var shirt_colors := [Color("#345f8a"),Color("#8a3f3f"),Color("#557b4a"),Color("#8c6b3e"),Color("#5d4f86")]
-    for i in range(5):
-        var start := Vector3(-55 + i * 22, 0.05, 19 + (i % 2) * 18)
+    # Mobile-friendly pedestrian population: more people, but each actor uses
+    # a lightweight state machine and the world sector cache controls tick rate.
+    var shirt_colors := [
+        Color("#345f8a"),Color("#8a3f3f"),Color("#557b4a"),
+        Color("#8c6b3e"),Color("#5d4f86"),Color("#496b70"),
+        Color("#6f4f3d"),Color("#6b6f43")
+    ]
+    var starts := [
+        Vector3(-55,0.05,19), Vector3(-33,0.05,37), Vector3(-11,0.05,18),
+        Vector3(12,0.05,39), Vector3(34,0.05,18), Vector3(56,0.05,36),
+        Vector3(-46,0.05,72), Vector3(-22,0.05,67), Vector3(6,0.05,72),
+        Vector3(30,0.05,66), Vector3(52,0.05,74), Vector3(-76,0.05,-8),
+        Vector3(-22,0.05,-31), Vector3(14,0.05,-34), Vector3(48,0.05,-22),
+        Vector3(74,0.05,-8), Vector3(22,0.05,-72), Vector3(56,0.05,-68)
+    ]
+    for i in range(starts.size()):
+        var start: Vector3 = starts[i]
         var person := _make_person(start, shirt_colors[i % shirt_colors.size()], rng.randf_range(0.92,1.06))
-        npcs.append({"node":person, "base":start, "phase":rng.randf_range(0.0,TAU), "radius":rng.randf_range(2.0,5.0)})
+        npcs.append({"node":person, "base":start, "phase":rng.randf_range(0.0,TAU), "radius":rng.randf_range(3.0,7.0)})
 
 func _make_landmarks() -> void:
     _make_building(Vector3(-18,0,12), Vector3(13,5.5,10), Color("#8b6248"), 1)
@@ -1346,14 +1361,17 @@ func _process(delta: float) -> void:
         if medium_npc and not reduced_update:
             continue
 
-        var phase: float = npc_data["phase"]
-        var base: Vector3 = npc_data["base"]
-        var radius: float = npc_data["radius"]
-        var step_t := t if not medium_npc else t - reduced_delta
-        var walk_rate := 0.45 if not medium_npc else 0.38
-        n.position = base + Vector3(cos(step_t*walk_rate+phase)*radius,0.05,sin(step_t*walk_rate+phase)*radius)
-        n.rotation.y = -atan2(sin(step_t*walk_rate+phase),cos(step_t*walk_rate+phase))
-        n.position.y = 0.05 + abs(sin(step_t*3.2+phase))*0.025
+        if n.has_method("ai_tick"):
+            n.ai_tick(simulation_delta if not medium_npc else reduced_delta, _player_ref.global_position, medium_npc)
+        else:
+            var phase: float = npc_data["phase"]
+            var base: Vector3 = npc_data["base"]
+            var radius: float = npc_data["radius"]
+            var step_t := t if not medium_npc else t - reduced_delta
+            var walk_rate := 0.45 if not medium_npc else 0.38
+            n.position = base + Vector3(cos(step_t*walk_rate+phase)*radius,0.05,sin(step_t*walk_rate+phase)*radius)
+            n.rotation.y = -atan2(sin(step_t*walk_rate+phase),cos(step_t*walk_rate+phase))
+            n.position.y = 0.05 + abs(sin(step_t*3.2+phase))*0.025
 
     var night := time_of_day < 6.0 or time_of_day > 18.3
     for data in _nearby_traffic:
