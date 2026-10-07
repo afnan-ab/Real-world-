@@ -149,7 +149,21 @@ func _update_context_controls() -> void:
     if gas_button: gas_button.visible = in_car
     if brake_button: brake_button.visible = in_car
     if exit_car_button: exit_car_button.visible = in_car
-    if drive_button: drive_button.text = "ENTER" if not in_car else "DRIVE"
+
+    if run_button:
+        run_button.text = "RUN"
+    if jump_button:
+        jump_button.text = "JUMP"
+    if action_button:
+        action_button.text = "ACT"
+    if drive_button:
+        drive_button.text = "ENTER CAR"
+    if gas_button:
+        gas_button.text = "GAS"
+    if brake_button:
+        brake_button.text = "BRAKE"
+    if exit_car_button:
+        exit_car_button.text = "EXIT"
 
 func _connect_hold_button(button: Button, gas: bool, brake: bool) -> void:
     if button == null: return
@@ -294,11 +308,45 @@ func _on_run_up() -> void:
 func _style_mobile_button(button: Button) -> void:
     if button == null:
         return
-    button.add_theme_font_size_override("font_size", 15)
-    button.add_theme_constant_override("outline_size", 2)
-    button.add_theme_color_override("font_color", Color("#eaf4f5"))
+
+    # Glass/HUD control language: large hit areas, high contrast and a clear
+    # pressed state. The actual action remains readable without relying on color.
+    button.focus_mode = Control.FOCUS_NONE
+    button.add_theme_font_size_override("font_size", 14)
+    button.add_theme_constant_override("outline_size", 1)
+    button.add_theme_color_override("font_color", Color("#edf7f8"))
     button.add_theme_color_override("font_hover_color", Color("#ffffff"))
     button.add_theme_color_override("font_pressed_color", Color("#ffffff"))
+    button.add_theme_color_override("font_outline_color", Color("#071116"))
+
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color(0.025, 0.055, 0.07, 0.78)
+    normal.border_color = Color(0.48, 0.78, 0.82, 0.55)
+    normal.set_border_width_all(1)
+    normal.corner_radius_top_left = 18
+    normal.corner_radius_top_right = 18
+    normal.corner_radius_bottom_left = 18
+    normal.corner_radius_bottom_right = 18
+    normal.shadow_color = Color(0,0,0,0.30)
+    normal.shadow_size = 6
+    normal.content_margin_left = 10
+    normal.content_margin_right = 10
+    normal.content_margin_top = 8
+    normal.content_margin_bottom = 8
+
+    var hover := normal.duplicate()
+    hover.bg_color = Color(0.06, 0.12, 0.14, 0.86)
+    hover.border_color = Color(0.58, 0.88, 0.90, 0.78)
+
+    var pressed := normal.duplicate()
+    pressed.bg_color = Color(0.12, 0.24, 0.27, 0.94)
+    pressed.border_color = Color(0.70, 0.94, 0.95, 0.95)
+    pressed.shadow_size = 2
+
+    button.add_theme_stylebox_override("normal", normal)
+    button.add_theme_stylebox_override("hover", hover)
+    button.add_theme_stylebox_override("pressed", pressed)
+    button.add_theme_stylebox_override("focus", pressed)
 
 func _on_drive_pressed() -> void:
     if world and world.has_method("_on_hud_act_pressed"):
