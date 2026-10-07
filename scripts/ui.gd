@@ -82,15 +82,12 @@ func _build_ui() -> void:
     _label("CITY  •  FREE ROAM",Vector2(34,56),14)
     weather_label = _label("CLEAR  •  08:00",Vector2(34,78),13)
     clock_label = _label("08:00",Vector2(302,25),18)
-
     hud_status = _label("● ONLINE",Vector2(1030,224),13)
     hud_status.add_theme_color_override("font_color",Color("#a9e6c2"))
-
     var stars := _label("WANTED  ☆ ☆ ☆ ☆ ☆",Vector2(470,24),17)
     stars.add_theme_color_override("font_color",Color("#f0d58a"))
     wanted_label = stars
     location_label = _label("DOWNTOWN",Vector2(470,50),16)
-
     _panel(Vector2(1000,18),Vector2(250,205),0.48)
     var clear := _button("☀  Clear",Vector2(1010,30))
     clear.pressed.connect(func(): world.set_weather("clear"); weather_label.text="WEATHER  •  CLEAR")
@@ -98,13 +95,11 @@ func _build_ui() -> void:
     rain.pressed.connect(func(): world.set_weather("rain"); weather_label.text="WEATHER  •  RAIN")
     var snow := _button("❄  Snow",Vector2(1010,140))
     snow.pressed.connect(func(): world.set_weather("snow"); weather_label.text="WEATHER  •  SNOW")
-
     joystick_base = _round_panel(Vector2(54,512),Vector2(150,150),Color(0.10,0.14,0.16,0.22),75)
     joystick_base.pivot_offset = Vector2(75,75)
     knob = _round_panel(Vector2(104,562),Vector2(50,50),Color(0.85,0.92,0.95,0.42),25)
     knob.pivot_offset = Vector2(25,25)
     knob.modulate = Color(1,1,1,0.82)
-
     _build_minimap()
     _build_jobs_panel()
     mission_label = _label("MISSION  •  PRESS ACT TO START",Vector2(470,82),14)
@@ -286,15 +281,9 @@ func _update_minimap() -> void:
     minimap_waypoint_dot.visible = true
 
 func _get_mission_waypoint() -> Vector3:
-    var index := int(world.mission_index) % 5
-    var points := [
-        Vector3(0, 0, 28),
-        Vector3(120, 0, 72),
-        Vector3(-72, 0, -55),
-        Vector3(-125, 0, 92),
-        Vector3(82, 0, -82)
-    ]
-    return points[index]
+    if world == null or not world.mission_active:
+        return Vector3.ZERO
+    return world.mission_target
 
 func _input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
