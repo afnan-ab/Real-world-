@@ -149,7 +149,7 @@ func _layout_mobile_hud() -> void:
         exit_car_button.size = Vector2(button_w, button_h)
         exit_car_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
 
-    for button in [run_button, jump_button, action_button, drive_button, action_button, gas_button, brake_button, exit_car_button]:
+    for button in [run_button, jump_button, action_button, drive_button, gas_button, brake_button, exit_car_button]:
         if button:
             button.pivot_offset = button.size * 0.5
 
@@ -316,7 +316,7 @@ func _on_run_down() -> void:
     if player and is_instance_valid(player):
         player.set_sprint(true)
     if run_button:
-        run_button.text = "STOP"
+        run_button.text = "■  STOP"
     _apply_joystick()
 
 func _on_run_up() -> void:
@@ -324,7 +324,7 @@ func _on_run_up() -> void:
     if player and is_instance_valid(player):
         player.set_sprint(false)
     if run_button:
-        run_button.text = "RUN"
+        run_button.text = "↗  RUN"
     _apply_joystick()
 
 
