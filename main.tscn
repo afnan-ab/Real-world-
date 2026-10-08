@@ -187,9 +187,8 @@ offset_left = 0.0
 offset_top = 0.0
 offset_right = 0.0
 offset_bottom = 0.0
-custom_minimum_size = Vector2(116, 78)
-theme_override_font_sizes/font_size = 16
-text = "RUN"
+theme_override_font_sizes/font_size = 15
+text = "↗  RUN"
 
 [node name="Action" type="Button" parent="HUD"]
 anchor_left = 0.80
@@ -200,9 +199,8 @@ offset_left = -4.0
 offset_top = 0.0
 offset_right = -8.0
 offset_bottom = 0.0
-custom_minimum_size = Vector2(116, 112)
-theme_override_font_sizes/font_size = 18
-text = "ACTION"
+theme_override_font_sizes/font_size = 15
+text = "✦  ACTION"
 
 [node name="Drive" type="Button" parent="HUD"]
 anchor_left = 0.90
@@ -212,16 +210,15 @@ anchor_bottom = 0.80
 offset_left = -4.0
 offset_right = -8.0
 theme_override_font_sizes/font_size = 15
-text = "DRIVE"
+text = "▸  DRIVE"
 
 [node name="Gas" type="Button" parent="HUD"]
 anchor_left = 0.80
 anchor_top = 0.70
 anchor_right = 0.89
 anchor_bottom = 0.82
-custom_minimum_size = Vector2(116, 82)
-theme_override_font_sizes/font_size = 16
-text = "GAS"
+theme_override_font_sizes/font_size = 15
+text = "●  GAS"
 visible = false
 
 [node name="Brake" type="Button" parent="HUD"]
@@ -229,9 +226,8 @@ anchor_left = 0.90
 anchor_top = 0.70
 anchor_right = 0.99
 anchor_bottom = 0.82
-custom_minimum_size = Vector2(116, 82)
-theme_override_font_sizes/font_size = 16
-text = "BRAKE"
+theme_override_font_sizes/font_size = 15
+text = "■  BRAKE"
 visible = false
 
 [node name="ExitCar" type="Button" parent="HUD"]
@@ -239,9 +235,8 @@ anchor_left = 0.90
 anchor_top = 0.84
 anchor_right = 0.99
 anchor_bottom = 0.96
-custom_minimum_size = Vector2(116, 78)
 theme_override_font_sizes/font_size = 15
-text = "EXIT"
+text = "↩  EXIT"
 visible = false
 [node name="Jump" type="Button" parent="HUD"]
 anchor_left = 0.90
@@ -252,7 +247,6 @@ offset_left = -4.0
 offset_top = 0.0
 offset_right = -8.0
 offset_bottom = 0.0
-custom_minimum_size = Vector2(116, 76)
-theme_override_font_sizes/font_size = 14
-text = "JUMP"
+theme_override_font_sizes/font_size = 15
+text = "↑  JUMP"
 
