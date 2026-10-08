@@ -21,6 +21,7 @@ var action_button: Button
 var gas_button: Button
 var brake_button: Button
 var exit_car_button: Button
+var joystick_visual: Control
 var run_touch := false
 var gas_touch := false
 var brake_touch := false
@@ -35,6 +36,12 @@ func _ready() -> void:
 
     joystick_zone = get_node_or_null("JoystickZone") as Control
     look_zone = get_node_or_null("LookZone") as Control
+    joystick_visual = get_node_or_null("Joystick") as Control
+
+    if joystick_visual:
+        joystick_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        joystick_visual.modulate = Color(1, 1, 1, 0)
+        _build_joystick_visual()
 
     if joystick_zone:
         joystick_zone.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -67,6 +74,11 @@ func _ready() -> void:
     _style_mobile_button(gas_button)
     _style_mobile_button(brake_button)
     _style_mobile_button(exit_car_button)
+
+    # Preserve the full control set while allowing responsive sizing.
+    for button in [run_button, jump_button, drive_button, action_button, gas_button, brake_button, exit_car_button]:
+        if button:
+            button.custom_minimum_size = Vector2.ZERO
 
     # Buttons support multitouch on touch input in Godot, so keep them as
     # normal Buttons while routing all gameplay actions through this layer.
@@ -109,26 +121,37 @@ func _layout_mobile_hud() -> void:
     var button_w := clamp(short_side * 0.145, 82.0, 118.0)
     var margin := clamp(short_side * 0.026, 16.0, 28.0)
     if run_button and not player.in_vehicle:
+        run_button.custom_minimum_size = Vector2.ZERO
         run_button.size = Vector2(button_w, button_h)
         run_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h - margin)
     if jump_button and not player.in_vehicle:
+        jump_button.custom_minimum_size = Vector2.ZERO
         jump_button.size = Vector2(button_w, button_h)
         jump_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
     if action_button and not player.in_vehicle:
+        action_button.custom_minimum_size = Vector2.ZERO
         action_button.size = Vector2(button_w, button_h)
         action_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
     if drive_button and not player.in_vehicle:
+        drive_button.custom_minimum_size = Vector2.ZERO
         drive_button.size = Vector2(button_w, button_h)
         drive_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
     if gas_button and player.in_vehicle:
+        gas_button.custom_minimum_size = Vector2.ZERO
         gas_button.size = Vector2(button_w, button_h)
         gas_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
     if brake_button and player.in_vehicle:
+        brake_button.custom_minimum_size = Vector2.ZERO
         brake_button.size = Vector2(button_w, button_h)
         brake_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
     if exit_car_button and player.in_vehicle:
+        exit_car_button.custom_minimum_size = Vector2.ZERO
         exit_car_button.size = Vector2(button_w, button_h)
         exit_car_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
+
+    for button in [run_button, jump_button, action_button, drive_button, action_button, gas_button, brake_button, exit_car_button]:
+        if button:
+            button.pivot_offset = button.size * 0.5
 
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
@@ -151,19 +174,19 @@ func _update_context_controls() -> void:
     if exit_car_button: exit_car_button.visible = in_car
 
     if run_button:
-        run_button.text = "RUN"
+        run_button.text = "↗  RUN"
     if jump_button:
-        jump_button.text = "JUMP"
+        jump_button.text = "↑  JUMP"
     if action_button:
-        action_button.text = "ACT"
+        action_button.text = "✦  ACTION"
     if drive_button:
-        drive_button.text = "ENTER CAR"
+        drive_button.text = "▸  DRIVE"
     if gas_button:
-        gas_button.text = "GAS"
+        gas_button.text = "●  GAS"
     if brake_button:
-        brake_button.text = "BRAKE"
+        brake_button.text = "■  BRAKE"
     if exit_car_button:
-        exit_car_button.text = "EXIT"
+        exit_car_button.text = "↩  EXIT"
 
 func _connect_hold_button(button: Button, gas: bool, brake: bool) -> void:
     if button == null: return
@@ -305,6 +328,23 @@ func _on_run_up() -> void:
     _apply_joystick()
 
 
+func _build_joystick_visual() -> void:
+    if joystick_zone == null:
+        return
+    var ring := Panel.new()
+    ring.name = "JoystickGlassRing"
+    ring.position = Vector2(8, 8)
+    ring.size = Vector2(134, 134)
+    ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var ring_style := StyleBoxFlat.new()
+    ring_style.bg_color = Color(0.02, 0.05, 0.065, 0.30)
+    ring_style.border_color = Color(0.58, 0.82, 0.84, 0.36)
+    ring_style.set_border_width_all(2)
+    ring_style.set_corner_radius_all(67)
+    ring_style.anti_aliasing = true
+    ring.add_theme_stylebox_override("panel", ring_style)
+    joystick_zone.add_child(ring)
+
 func _style_mobile_button(button: Button) -> void:
     if button == null:
         return
@@ -312,7 +352,7 @@ func _style_mobile_button(button: Button) -> void:
     # Glass/HUD control language: large hit areas, high contrast and a clear
     # pressed state. The actual action remains readable without relying on color.
     button.focus_mode = Control.FOCUS_NONE
-    button.add_theme_font_size_override("font_size", 14)
+    button.add_theme_font_size_override("font_size", 15)
     button.add_theme_constant_override("outline_size", 1)
     button.add_theme_color_override("font_color", Color("#edf7f8"))
     button.add_theme_color_override("font_hover_color", Color("#ffffff"))
@@ -323,25 +363,28 @@ func _style_mobile_button(button: Button) -> void:
     normal.bg_color = Color(0.025, 0.055, 0.07, 0.78)
     normal.border_color = Color(0.48, 0.78, 0.82, 0.55)
     normal.set_border_width_all(1)
-    normal.corner_radius_top_left = 18
-    normal.corner_radius_top_right = 18
-    normal.corner_radius_bottom_left = 18
-    normal.corner_radius_bottom_right = 18
+    normal.corner_radius_top_left = 22
+    normal.corner_radius_top_right = 22
+    normal.corner_radius_bottom_left = 22
+    normal.corner_radius_bottom_right = 22
+    normal.anti_aliasing = true
     normal.shadow_color = Color(0,0,0,0.30)
-    normal.shadow_size = 6
+    normal.shadow_size = 7
+    normal.shadow_offset = Vector2(0, 2)
     normal.content_margin_left = 10
     normal.content_margin_right = 10
     normal.content_margin_top = 8
     normal.content_margin_bottom = 8
 
     var hover := normal.duplicate()
-    hover.bg_color = Color(0.06, 0.12, 0.14, 0.86)
+    hover.bg_color = Color(0.06, 0.15, 0.18, 0.90)
     hover.border_color = Color(0.58, 0.88, 0.90, 0.78)
 
     var pressed := normal.duplicate()
-    pressed.bg_color = Color(0.12, 0.24, 0.27, 0.94)
+    pressed.bg_color = Color(0.12, 0.30, 0.34, 0.96)
     pressed.border_color = Color(0.70, 0.94, 0.95, 0.95)
     pressed.shadow_size = 2
+    button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
     button.add_theme_stylebox_override("normal", normal)
     button.add_theme_stylebox_override("hover", hover)
