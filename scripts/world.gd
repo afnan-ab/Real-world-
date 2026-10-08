@@ -436,33 +436,33 @@ func _setup_environment() -> void:
         sky_mat = ProceduralSkyMaterial.new()
         sky.sky_material = sky_mat
 
-    sky_mat.sky_top_color = Color("#0b2748")
-    sky_mat.sky_horizon_color = Color("#9bc4d5")
-    sky_mat.ground_bottom_color = Color("#18231f")
-    sky_mat.ground_horizon_color = Color("#71877d")
+    sky_mat.sky_top_color = Color("#173b59")
+    sky_mat.sky_horizon_color = Color("#6f9eae")
+    sky_mat.ground_bottom_color = Color("#15221d")
+    sky_mat.ground_horizon_color = Color("#4f6a60")
     sky_mat.sun_angle_max = 12.0
     sky_mat.sun_curve = 0.08
 
     # Depth fog blends distant buildings into the sky and gives the large world
     # atmospheric depth without using expensive volumetric fog.
     env.fog_enabled = true
-    env.fog_light_color = Color("#a9c3cb")
-    env.fog_light_energy = 0.55
-    env.fog_density = 0.00065
-    env.fog_height = 10.0
-    env.fog_height_density = 0.003
-    env.fog_sun_scatter = 0.18
-    env.fog_aerial_perspective = 0.72
-    env.fog_sky_affect = 0.18
-    env.fog_depth_begin = 65.0
-    env.fog_depth_end = 320.0
+    env.fog_light_color = Color("#829ca4")
+    env.fog_light_energy = 0.34
+    env.fog_density = 0.00022
+    env.fog_height = 8.0
+    env.fog_height_density = 0.0012
+    env.fog_sun_scatter = 0.08
+    env.fog_aerial_perspective = 0.28
+    env.fog_sky_affect = 0.10
+    env.fog_depth_begin = 110.0
+    env.fog_depth_end = 360.0
 
     # Gentle color correction makes materials read better on mobile screens.
     # Auto exposure and heavy post-processing stay disabled for performance.
     env.adjustment_enabled = true
-    env.adjustment_brightness = 1.03
-    env.adjustment_contrast = 1.08
-    env.adjustment_saturation = 1.06
+    env.adjustment_brightness = 0.98
+    env.adjustment_contrast = 1.14
+    env.adjustment_saturation = 1.10
     env.glow_enabled = false
 
     sun = get_node_or_null("Sun") as DirectionalLight3D
