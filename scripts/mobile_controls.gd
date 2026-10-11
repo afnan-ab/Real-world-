@@ -67,13 +67,13 @@ func _ready() -> void:
     brake_button = get_node_or_null("Brake") as Button
     exit_car_button = get_node_or_null("ExitCar") as Button
 
-    _style_mobile_button(run_button)
-    _style_mobile_button(jump_button)
-    _style_mobile_button(drive_button)
-    _style_mobile_button(action_button)
-    _style_mobile_button(gas_button)
-    _style_mobile_button(brake_button)
-    _style_mobile_button(exit_car_button)
+    _style_mobile_button(run_button, Color("#35b6a0"))
+    _style_mobile_button(jump_button, Color("#4b9bff"))
+    _style_mobile_button(drive_button, Color("#38b8d7"))
+    _style_mobile_button(action_button, Color("#f0b84b"))
+    _style_mobile_button(gas_button, Color("#35c879"))
+    _style_mobile_button(brake_button, Color("#ef6868"))
+    _style_mobile_button(exit_car_button, Color("#9aa9b5"))
 
     # Preserve the full control set while allowing responsive sizing.
     for button in [run_button, jump_button, drive_button, action_button, gas_button, brake_button, exit_car_button]:
@@ -117,9 +117,9 @@ func _ready() -> void:
 func _layout_mobile_hud() -> void:
     var size := get_viewport().get_visible_rect().size
     var short_side := min(size.x, size.y)
-    var button_h := clamp(short_side * 0.105, 58.0, 86.0)
-    var button_w := clamp(short_side * 0.145, 82.0, 118.0)
-    var margin := clamp(short_side * 0.026, 16.0, 28.0)
+    var button_h := clamp(short_side * 0.112, 64.0, 88.0)
+    var button_w := clamp(short_side * 0.150, 88.0, 120.0)
+    var margin := clamp(short_side * 0.025, 16.0, 26.0)
     if run_button and not player.in_vehicle:
         run_button.custom_minimum_size = Vector2.ZERO
         run_button.size = Vector2(button_w, button_h)
@@ -345,51 +345,52 @@ func _build_joystick_visual() -> void:
     ring.add_theme_stylebox_override("panel", ring_style)
     joystick_zone.add_child(ring)
 
-func _style_mobile_button(button: Button) -> void:
+func _style_mobile_button(button: Button, accent: Color) -> void:
     if button == null:
         return
 
-    # Glass/HUD control language: large hit areas, high contrast and a clear
-    # pressed state. The actual action remains readable without relying on color.
+    # Thumb-friendly arcade HUD: strong contrast, colored edge, translucent fill,
+    # large readable labels, and an unmistakable tactile pressed state.
     button.focus_mode = Control.FOCUS_NONE
-    button.add_theme_font_size_override("font_size", 15)
-    button.add_theme_constant_override("outline_size", 1)
-    button.add_theme_color_override("font_color", Color("#edf7f8"))
+    button.add_theme_font_size_override("font_size", 14)
+    button.add_theme_constant_override("outline_size", 2)
+    button.add_theme_color_override("font_color", Color("#f7fbff"))
     button.add_theme_color_override("font_hover_color", Color("#ffffff"))
     button.add_theme_color_override("font_pressed_color", Color("#ffffff"))
     button.add_theme_color_override("font_outline_color", Color("#071116"))
+    button.add_theme_color_override("icon_normal_color", Color("#ffffff"))
 
     var normal := StyleBoxFlat.new()
-    normal.bg_color = Color(0.025, 0.055, 0.07, 0.78)
-    normal.border_color = Color(0.48, 0.78, 0.82, 0.55)
-    normal.set_border_width_all(1)
-    normal.corner_radius_top_left = 22
-    normal.corner_radius_top_right = 22
-    normal.corner_radius_bottom_left = 22
-    normal.corner_radius_bottom_right = 22
+    normal.bg_color = Color(accent.r * 0.20, accent.g * 0.20, accent.b * 0.20, 0.88)
+    normal.border_color = Color(accent.r, accent.g, accent.b, 0.95)
+    normal.set_border_width_all(2)
+    normal.set_corner_radius_all(22)
     normal.anti_aliasing = true
-    normal.shadow_color = Color(0,0,0,0.30)
-    normal.shadow_size = 7
-    normal.shadow_offset = Vector2(0, 2)
-    normal.content_margin_left = 10
-    normal.content_margin_right = 10
-    normal.content_margin_top = 8
-    normal.content_margin_bottom = 8
+    normal.shadow_color = Color(0, 0, 0, 0.42)
+    normal.shadow_size = 8
+    normal.shadow_offset = Vector2(0, 3)
+    normal.content_margin_left = 7
+    normal.content_margin_right = 7
+    normal.content_margin_top = 6
+    normal.content_margin_bottom = 6
 
-    var hover := normal.duplicate()
-    hover.bg_color = Color(0.06, 0.15, 0.18, 0.90)
-    hover.border_color = Color(0.58, 0.88, 0.90, 0.78)
+    var hover := normal.duplicate() as StyleBoxFlat
+    hover.bg_color = Color(accent.r * 0.38, accent.g * 0.38, accent.b * 0.38, 0.96)
+    hover.border_color = Color(accent.r, accent.g, accent.b, 1.0)
+    hover.shadow_size = 10
 
-    var pressed := normal.duplicate()
-    pressed.bg_color = Color(0.12, 0.30, 0.34, 0.96)
-    pressed.border_color = Color(0.70, 0.94, 0.95, 0.95)
+    var pressed := normal.duplicate() as StyleBoxFlat
+    pressed.bg_color = Color(accent.r * 0.58, accent.g * 0.58, accent.b * 0.58, 1.0)
+    pressed.border_color = Color("#ffffff")
+    pressed.set_border_width_all(3)
     pressed.shadow_size = 2
-    button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+    pressed.shadow_offset = Vector2(0, 1)
 
     button.add_theme_stylebox_override("normal", normal)
     button.add_theme_stylebox_override("hover", hover)
     button.add_theme_stylebox_override("pressed", pressed)
     button.add_theme_stylebox_override("focus", pressed)
+    button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 func _on_drive_pressed() -> void:
     if world and world.has_method("_on_hud_act_pressed"):
