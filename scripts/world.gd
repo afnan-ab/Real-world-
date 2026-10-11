@@ -1361,11 +1361,16 @@ func _step18_visual_update() -> void:
     sun.light_color = Color("#fff0d2").lerp(Color("#9db9df"), night * 0.72)
     sun.light_energy = lerp(0.16, 1.42, daylight)
     world_env.environment.ambient_light_energy = lerp(0.30, 1.05, daylight)
-    world_env.environment.fog_density = 0.0010 + night * 0.0018
+    # Keep the near city readable on low-end Android screens. Heavy depth fog
+    # was washing out the entire scene; use only a subtle distance haze.
+    world_env.environment.fog_density = 0.00010 + night * 0.00008
+    world_env.environment.fog_height_density = 0.00035
+    world_env.environment.fog_depth_begin = 75.0
+    world_env.environment.fog_depth_end = 360.0
     if weather == "rain":
-        world_env.environment.fog_density += 0.0022
+        world_env.environment.fog_density += 0.00008
     elif weather == "snow":
-        world_env.environment.fog_density += 0.0034
+        world_env.environment.fog_density += 0.00012
 
 
 func _process(delta: float) -> void:
