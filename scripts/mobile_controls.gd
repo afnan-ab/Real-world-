@@ -174,19 +174,19 @@ func _update_context_controls() -> void:
     if exit_car_button: exit_car_button.visible = in_car
 
     if run_button:
-        run_button.text = "↗  RUN"
+        run_button.text = "RUN"
     if jump_button:
-        jump_button.text = "↑  JUMP"
+        jump_button.text = "JUMP"
     if action_button:
-        action_button.text = "✦  ACTION"
+        action_button.text = "ACTION"
     if drive_button:
-        drive_button.text = "▸  DRIVE"
+        drive_button.text = "DRIVE"
     if gas_button:
-        gas_button.text = "●  GAS"
+        gas_button.text = "GAS"
     if brake_button:
-        brake_button.text = "■  BRAKE"
+        brake_button.text = "BRAKE"
     if exit_car_button:
-        exit_car_button.text = "↩  EXIT"
+        exit_car_button.text = "EXIT"
 
 func _connect_hold_button(button: Button, gas: bool, brake: bool) -> void:
     if button == null: return
@@ -316,7 +316,7 @@ func _on_run_down() -> void:
     if player and is_instance_valid(player):
         player.set_sprint(true)
     if run_button:
-        run_button.text = "■  STOP"
+        run_button.text = "STOP"
     _apply_joystick()
 
 func _on_run_up() -> void:
