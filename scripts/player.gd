@@ -117,7 +117,7 @@ func set_sprint(enabled: bool) -> void:
 
 func look_camera(delta_screen: Vector2) -> void:
     camera_yaw -= delta_screen.x * look_sensitivity
-    camera_pitch = clamp(camera_pitch - delta_screen.y * look_sensitivity, -0.45, 0.12)
+    camera_pitch = clamp(camera_pitch - delta_screen.y * look_sensitivity, -0.45, 0.55)
     $CameraPivot.rotation.y = camera_yaw
     camera.rotation.x = camera_pitch
 
