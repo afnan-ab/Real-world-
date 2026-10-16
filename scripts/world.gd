@@ -620,12 +620,15 @@ func _make_terrain() -> void:
             var cb := _ground_color(b.y, x1, z0)
             var cc := _ground_color(c.y, x1, z1)
             var cd := _ground_color(d.y, x0, z1)
+            # IMPORTANT: Godot's front faces must wind counter-clockwise from above.
+            # The previous a-b-c order produced downward-facing triangles, so the
+            # entire terrain was back-face culled on mobile and the world looked blank.
             st.set_color(ca); st.add_vertex(a)
+            st.set_color(cc); st.add_vertex(c)
             st.set_color(cb); st.add_vertex(b)
-            st.set_color(cc); st.add_vertex(c)
             st.set_color(ca); st.add_vertex(a)
-            st.set_color(cc); st.add_vertex(c)
             st.set_color(cd); st.add_vertex(d)
+            st.set_color(cc); st.add_vertex(c)
     st.generate_normals()
     var mesh := st.commit()
     var terrain := MeshInstance3D.new()
@@ -656,8 +659,9 @@ func _make_terrain() -> void:
             var b := Vector3(x1, _height(x1, z0), z0)
             var c := Vector3(x1, _height(x1, z1), z1)
             var d := Vector3(x0, _height(x0, z1), z1)
-            faces.append(a); faces.append(b); faces.append(c)
-            faces.append(a); faces.append(c); faces.append(d)
+            # Match the upward-facing visual terrain winding for reliable collision.
+            faces.append(a); faces.append(c); faces.append(b)
+            faces.append(a); faces.append(d); faces.append(c)
     shape.set_faces(faces)
     collision.shape = shape
     body.add_child(collision)
