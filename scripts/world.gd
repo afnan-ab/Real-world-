@@ -632,12 +632,19 @@ func _make_terrain() -> void:
     st.generate_normals()
     var mesh := st.commit()
     var terrain := MeshInstance3D.new()
+    terrain.name = "WorldTerrain"
     terrain.mesh = mesh
+    # Compatibility/mobile renderers can be sensitive to procedural mesh
+    # winding and imported normals. Keep the terrain visible from either side
+    # so a winding regression cannot turn the whole world into a blank sky.
+    terrain.visibility_range_end = 520.0
+    terrain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var mat := StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
     mat.roughness = 0.92
     mat.metallic = 0.0
     mat.metallic_specular = 0.35
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
     terrain.material_override = mat
     add_child(terrain)
 
