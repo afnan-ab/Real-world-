@@ -448,13 +448,13 @@ func _setup_environment() -> void:
     env.fog_enabled = true
     env.fog_light_color = Color("#829ca4")
     env.fog_light_energy = 0.34
-    env.fog_density = 0.00022
+    env.fog_density = 0.00008
     env.fog_height = 8.0
-    env.fog_height_density = 0.0012
+    env.fog_height_density = 0.00025
     env.fog_sun_scatter = 0.08
     env.fog_aerial_perspective = 0.28
     env.fog_sky_affect = 0.10
-    env.fog_depth_begin = 110.0
+    env.fog_depth_begin = 150.0
     env.fog_depth_end = 360.0
 
     # Gentle color correction makes materials read better on mobile screens.
@@ -1374,14 +1374,14 @@ func _step18_visual_update() -> void:
     world_env.environment.ambient_light_energy = lerp(0.30, 1.05, daylight)
     # Keep the near city readable on low-end Android screens. Heavy depth fog
     # was washing out the entire scene; use only a subtle distance haze.
-    world_env.environment.fog_density = 0.00010 + night * 0.00008
-    world_env.environment.fog_height_density = 0.00035
-    world_env.environment.fog_depth_begin = 75.0
-    world_env.environment.fog_depth_end = 360.0
+    world_env.environment.fog_density = 0.00006 + night * 0.00004
+    world_env.environment.fog_height_density = 0.00018
+    world_env.environment.fog_depth_begin = 140.0
+    world_env.environment.fog_depth_end = 460.0
     if weather == "rain":
-        world_env.environment.fog_density += 0.00008
+        world_env.environment.fog_density += 0.00018
     elif weather == "snow":
-        world_env.environment.fog_density += 0.00012
+        world_env.environment.fog_density += 0.00025
 
 
 func _process(delta: float) -> void:
@@ -1520,11 +1520,11 @@ func set_weather(kind: String) -> void:
     rain_particles.visible = kind == "rain"
     snow_particles.visible = kind == "snow"
     if kind == "snow":
-        world_env.environment.fog_density = 0.008
+        world_env.environment.fog_density = 0.0008
     elif kind == "rain":
-        world_env.environment.fog_density = 0.0045
+        world_env.environment.fog_density = 0.00045
     else:
-        world_env.environment.fog_density = 0.00115
+        world_env.environment.fog_density = 0.00008
 
 
 func _on_hud_run_pressed() -> void:
