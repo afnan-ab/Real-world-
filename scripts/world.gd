@@ -648,6 +648,25 @@ func _make_terrain() -> void:
     terrain.material_override = mat
     add_child(terrain)
 
+    # VISUAL SAFETY FLOOR: a simple opaque ground plane sits just below the
+    # procedural terrain. If a mobile GPU fails to draw the vertex-coloured
+    # SurfaceTool mesh, the player still sees a ground surface instead of sky.
+    # It does not replace the detailed terrain; it is a fallback underneath it.
+    var fallback_ground := MeshInstance3D.new()
+    fallback_ground.name = "GroundVisibilityFallback"
+    var fallback_mesh := PlaneMesh.new()
+    fallback_mesh.size = Vector2(extent * 2.0, extent * 2.0)
+    fallback_ground.mesh = fallback_mesh
+    fallback_ground.position = Vector3(0.0, -0.18, 0.0)
+    fallback_ground.visibility_range_end = 600.0
+    fallback_ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var fallback_mat := StandardMaterial3D.new()
+    fallback_mat.albedo_color = Color("#496548")
+    fallback_mat.roughness = 1.0
+    fallback_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    fallback_ground.material_override = fallback_mat
+    add_child(fallback_ground)
+
     # Physics uses a much coarser collision mesh than the visual terrain.
     # The full 78x78 terrain remains rendered; this cuts collision triangles heavily.
     var body := StaticBody3D.new()
