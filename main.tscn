@@ -25,11 +25,11 @@ sky = SubResource("Sky_jarvis")
 ambient_light_source = 3
 ambient_light_energy = 0.95
 ambient_light_sky_contribution = 0.72
-fog_enabled = true
+fog_enabled = false
 fog_light_color = Color(0.717647, 0.780392, 0.788235, 1)
-fog_density = 0.00115
+fog_density = 0.0
 fog_height = 18.0
-fog_height_density = 0.008
+fog_height_density = 0.00025
 glow_enabled = false
 
 
@@ -62,7 +62,7 @@ material_override = SubResource("GroundMaterial_failsafe")
 cast_shadow = 0
 
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(0, 2.2, -5)
+position = Vector3(0, 1.0, -5)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
@@ -72,8 +72,8 @@ shape = SubResource("CapsuleShape3D_player")
 position = Vector3(0, 1.0, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Player/CameraPivot"]
-position = Vector3(0, 3.1, 7.0)
-rotation_degrees = Vector3(-22, 0, 0)
+position = Vector3(0, 1.4, 7.5)
+rotation_degrees = Vector3(-24, 0, 0)
 current = true
 fov = 70.0
 
