@@ -172,17 +172,25 @@ func _apply_step9_culling(node: Node) -> void:
     for child in node.get_children():
         if child is GeometryInstance3D:
             var geo := child as GeometryInstance3D
-            var distance := float(geo.get_meta("lod_distance", geo.visibility_range_end))
-            if distance <= 0.0:
-                distance = 260.0
-
-            var n := String(geo.name).to_lower()
-            if n.contains("road") or n.contains("terrain") or n.contains("mountain"):
-                geo.visibility_range_end = max(distance, 300.0)
-            elif n.contains("window") or n.contains("awning") or n.contains("balcony") or n.contains("curb"):
-                geo.visibility_range_end = min(distance, 205.0)
+            # Keep the immediate play area uncullled. This avoids the mobile
+            # build opening on an empty-looking floor if the device applies
+            # visibility-range transitions aggressively near the camera.
+            var near_spawn := false
+            if _player_ref != null and is_instance_valid(_player_ref):
+                near_spawn = geo.global_position.distance_to(_player_ref.global_position) < 95.0
+            if near_spawn:
+                geo.visibility_range_end = 0.0
             else:
-                geo.visibility_range_end = min(distance, 260.0)
+                var distance := float(geo.get_meta("lod_distance", geo.visibility_range_end))
+                if distance <= 0.0:
+                    distance = 260.0
+                var n := String(geo.name).to_lower()
+                if n.contains("road") or n.contains("terrain") or n.contains("mountain"):
+                    geo.visibility_range_end = max(distance, 320.0)
+                elif n.contains("window") or n.contains("awning") or n.contains("balcony") or n.contains("curb"):
+                    geo.visibility_range_end = min(distance, 205.0)
+                else:
+                    geo.visibility_range_end = min(distance, 260.0)
         _apply_step9_culling(child)
 
 func _apply_lod_recursive(node: Node) -> void:
