@@ -37,7 +37,7 @@ glow_enabled = false
 size = Vector2(1000, 1000)
 
 [sub_resource type="StandardMaterial3D" id="GroundMaterial_failsafe"]
-shading_mode =  unshaded
+shading_mode = 0
 albedo_color = Color(0.18, 0.31, 0.16, 1)
 roughness = 1.0
 cull_mode = 2
