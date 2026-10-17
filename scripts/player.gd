@@ -26,6 +26,9 @@ func _ready() -> void:
     capsule.radius = 0.38
     capsule.height = 1.8
     $CollisionShape3D.shape = capsule
+    floor_snap_length = 0.45
+    floor_max_angle = deg_to_rad(52.0)
+    safe_margin = 0.04
 
     camera = $CameraPivot/Camera3D
     camera.position = Vector3(0.0, 2.6, camera_distance)
@@ -175,3 +178,19 @@ func _physics_process(delta: float) -> void:
         velocity.y = 0.0
 
     move_and_slide()
+
+    # Mobile safety recovery: coarse terrain collision can miss a frame on
+    # some Android devices. Keep the player above the generated ground instead
+    # of letting them fall forever through the world.
+    var world_root := get_parent()
+    if world_root and world_root.has_method("_height"):
+        var ground_y: float = world_root.call("_height", global_position.x, global_position.z)
+        var standing_y := ground_y + 0.92
+        if global_position.y < ground_y - 1.5:
+            global_position.y = standing_y
+            velocity.y = 0.0
+            velocity.x *= 0.35
+            velocity.z *= 0.35
+        elif is_on_floor() and global_position.y < standing_y:
+            global_position.y = standing_y
+            velocity.y = 0.0
