@@ -4,7 +4,7 @@ extends CharacterBody3D
 @export var sprint_speed: float = 9.5
 @export var acceleration: float = 18.0
 @export var gravity: float = 20.0
-@export var camera_distance: float = 6.5
+@export var camera_distance: float = 7.5
 @export var look_sensitivity: float = 0.010
 
 var joystick := Vector2.ZERO
@@ -17,7 +17,7 @@ var camera: Camera3D
 var walk_time: float = 0.0
 var sprint_touch := false
 var camera_yaw: float = 0.0
-var camera_pitch: float = deg_to_rad(-22.0)
+var camera_pitch: float = deg_to_rad(-24.0)
 var in_vehicle: bool = false
 var vehicle: CharacterBody3D
 
@@ -31,7 +31,7 @@ func _ready() -> void:
     safe_margin = 0.04
 
     camera = $CameraPivot/Camera3D
-    camera.position = Vector3(0.0, 2.6, camera_distance)
+    camera.position = Vector3(0.0, 1.4, camera_distance)
     camera.rotation = Vector3(camera_pitch, 0.0, 0.0)
     camera.current = true
 
@@ -126,7 +126,7 @@ func look_camera(delta_screen: Vector2) -> void:
 
 func reset_camera_look() -> void:
     camera_yaw = 0.0
-    camera_pitch = deg_to_rad(-22.0)
+    camera_pitch = deg_to_rad(-24.0)
     $CameraPivot.rotation.y = 0.0
     camera.rotation.x = camera_pitch
 
