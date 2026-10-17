@@ -175,7 +175,7 @@ func _update_context_controls() -> void:
     if exit_car_button: exit_car_button.visible = in_car
 
     if run_button:
-        run_button.text = "RUN"
+        run_button.text = "SPRINT" if run_touch else "RUN"
     if jump_button:
         jump_button.text = "JUMP"
     if action_button:
@@ -353,7 +353,7 @@ func _style_mobile_button(button: Button, accent: Color) -> void:
     # Thumb-friendly arcade HUD: strong contrast, colored edge, translucent fill,
     # large readable labels, and an unmistakable tactile pressed state.
     button.focus_mode = Control.FOCUS_NONE
-    button.add_theme_font_size_override("font_size", 16)
+    button.add_theme_font_size_override("font_size", 17)
     button.add_theme_constant_override("outline_size", 2)
     button.add_theme_color_override("font_color", Color("#f7fbff"))
     button.add_theme_color_override("font_hover_color", Color("#ffffff"))
@@ -362,13 +362,15 @@ func _style_mobile_button(button: Button, accent: Color) -> void:
     button.add_theme_color_override("icon_normal_color", Color("#ffffff"))
 
     var normal := StyleBoxFlat.new()
-    normal.bg_color = Color(accent.r * 0.20, accent.g * 0.20, accent.b * 0.20, 0.88)
-    normal.border_color = Color(accent.r, accent.g, accent.b, 0.95)
+    # Higher opacity keeps touch controls readable over bright sky, dark roads,
+    # and weather effects. The accent edge stays visible without reducing buttons.
+    normal.bg_color = Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.97)
+    normal.border_color = Color(accent.r, accent.g, accent.b, 1.0)
     normal.set_border_width_all(2)
-    normal.set_corner_radius_all(22)
+    normal.set_corner_radius_all(20)
     normal.anti_aliasing = true
-    normal.shadow_color = Color(0, 0, 0, 0.42)
-    normal.shadow_size = 8
+    normal.shadow_color = Color(0, 0, 0, 0.62)
+    normal.shadow_size = 9
     normal.shadow_offset = Vector2(0, 3)
     normal.content_margin_left = 7
     normal.content_margin_right = 7
@@ -376,7 +378,7 @@ func _style_mobile_button(button: Button, accent: Color) -> void:
     normal.content_margin_bottom = 6
 
     var hover := normal.duplicate() as StyleBoxFlat
-    hover.bg_color = Color(accent.r * 0.38, accent.g * 0.38, accent.b * 0.38, 0.96)
+    hover.bg_color = Color(accent.r * 0.42, accent.g * 0.42, accent.b * 0.42, 0.99)
     hover.border_color = Color(accent.r, accent.g, accent.b, 1.0)
     hover.shadow_size = 10
 
