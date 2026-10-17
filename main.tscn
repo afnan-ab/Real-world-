@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource path="res://scripts/world.gd" type="Script" id="1"]
 [ext_resource path="res://scripts/player.gd" type="Script" id="2"]
@@ -32,6 +32,16 @@ fog_height = 18.0
 fog_height_density = 0.008
 glow_enabled = false
 
+
+[sub_resource type="PlaneMesh" id="GroundPlane_failsafe"]
+size = Vector2(1000, 1000)
+
+[sub_resource type="StandardMaterial3D" id="GroundMaterial_failsafe"]
+shading_mode =  unshaded
+albedo_color = Color(0.18, 0.31, 0.16, 1)
+roughness = 1.0
+cull_mode = 2
+
 [node name="RealWorld" type="Node3D"]
 script = ExtResource("1")
 
@@ -44,6 +54,12 @@ light_color = Color(1, 0.956863, 0.87451, 1)
 light_energy = 1.45
 shadow_enabled = true
 directional_shadow_max_distance = 90.0
+
+[node name="GroundFailsafe" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.45, 0)
+mesh = SubResource("GroundPlane_failsafe")
+material_override = SubResource("GroundMaterial_failsafe")
+cast_shadow = 0
 
 [node name="Player" type="CharacterBody3D" parent="."]
 position = Vector3(0, 2.2, -5)
