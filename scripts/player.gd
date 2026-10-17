@@ -186,7 +186,10 @@ func _physics_process(delta: float) -> void:
     if world_root and world_root.has_method("_height"):
         var ground_y: float = world_root.call("_height", global_position.x, global_position.z)
         var standing_y := ground_y + 0.92
-        if global_position.y < ground_y - 1.5:
+        # Recover early if a mobile frame misses the coarse terrain collider.
+        # The old -1.5 m threshold allowed the character/camera to visibly sink
+        # before recovery. Keep the capsule center near the generated ground height.
+        if global_position.y < standing_y - 0.35:
             global_position.y = standing_y
             velocity.y = 0.0
             velocity.x *= 0.35
