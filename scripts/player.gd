@@ -1,199 +1,271 @@
 extends CharacterBody3D
 
+# Third-person player for the mobile open world.
+# Fixes in this pass:
+#  - jump actually works (buffered + coyote time, no air-jumping)
+#  - model is human sized, stands on the ground and faces the walking direction
+#  - limbs are pivoted at shoulders/hips so they swing properly
+#  - player follows the vehicle while driving and its collider is disabled
+#  - player is kept inside the world bounds
+
 @export var speed: float = 5.8
 @export var sprint_speed: float = 9.5
 @export var acceleration: float = 18.0
 @export var gravity: float = 20.0
+@export var jump_velocity: float = 7.5
 @export var camera_distance: float = 7.5
 @export var look_sensitivity: float = 0.010
 
-var joystick := Vector2.ZERO
-var visual: Node3D
-var left_arm: MeshInstance3D
-var right_arm: MeshInstance3D
-var left_leg: MeshInstance3D
-var right_leg: MeshInstance3D
-var camera: Camera3D
-var walk_time: float = 0.0
-var sprint_touch := false
+const WORLD_LIMIT := 208.0
+const VISUAL_SCALE := 0.70
+const VISUAL_Y := -0.20
+const COYOTE_TIME := 0.12
+const JUMP_BUFFER_TIME := 0.15
+
+var joystick: Vector2 = Vector2.ZERO
+var sprint_touch: bool = false
 var camera_yaw: float = 0.0
-var camera_pitch: float = deg_to_rad(-24.0)
+var camera_pitch: float = -0.34
+var walk_time: float = 0.0
 var in_vehicle: bool = false
-var vehicle: CharacterBody3D
+var vehicle: CharacterBody3D = null
+var jump_buffer: float = 0.0
+var coyote_timer: float = 0.0
+
+var camera_pivot: Node3D
+var camera: Camera3D
+var collision_shape: CollisionShape3D
+var visual: Node3D
+var left_arm: Node3D
+var right_arm: Node3D
+var left_leg: Node3D
+var right_leg: Node3D
 
 func _ready() -> void:
+    collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
     var capsule := CapsuleShape3D.new()
     capsule.radius = 0.38
     capsule.height = 1.8
-    $CollisionShape3D.shape = capsule
+    if collision_shape != null:
+        collision_shape.shape = capsule
     floor_snap_length = 0.45
     floor_max_angle = deg_to_rad(52.0)
     safe_margin = 0.04
-
-    camera = $CameraPivot/Camera3D
-    camera.position = Vector3(0.0, 1.4, camera_distance)
-    camera.rotation = Vector3(camera_pitch, 0.0, 0.0)
-    camera.current = true
-
+    camera_pivot = get_node_or_null("CameraPivot") as Node3D
+    camera = get_node_or_null("CameraPivot/Camera3D") as Camera3D
+    if camera_pivot != null:
+        camera_pivot.position = Vector3(0.0, 1.0, 0.0)
+    if camera != null:
+        camera.position = Vector3(0.0, 1.4, camera_distance)
+        camera.rotation_degrees = Vector3(-14.0, 0.0, 0.0)
+        camera.fov = 68.0
+        camera.current = true
     _build_human()
+    _apply_camera()
 
-func _build_human() -> void:
-    # STEP 17: improved low-poly player character.
-    # Keeps the existing lightweight procedural approach and walking animation,
-    # but adds better proportions, layered clothing, rounded head and shoes.
-    visual = Node3D.new()
-    visual.name = "PlayerVisual"
-    visual.position.y = 0.9
-    add_child(visual)
-
-    var skin := _mat(Color("#b97858"), 0.68)
-    var skin_dark := _mat(Color("#8e5a46"), 0.76)
-    var shirt := _mat(Color("#263b52"), 0.82)
-    var shirt_dark := _mat(Color("#1d2d40"), 0.88)
-    var pants := _mat(Color("#24282d"), 0.92)
-    var shoes := _mat(Color("#111315"), 0.96)
-    var sole := _mat(Color("#25282a"), 0.88)
-    var hair := _mat(Color("#16181a"), 0.94)
-    var eye := _mat(Color("#202020"), 0.35)
-
-    _part(BoxMesh.new(), Vector3(0,0.55,0), Vector3(0.54,0.90,0.38), shirt)
-    _part(BoxMesh.new(), Vector3(0,1.02,0), Vector3(0.60,0.18,0.42), shirt_dark)
-    left_arm = _part(BoxMesh.new(), Vector3(-0.36,0.54,0), Vector3(0.16,0.72,0.17), shirt)
-    right_arm = _part(BoxMesh.new(), Vector3(0.36,0.54,0), Vector3(0.16,0.72,0.17), shirt)
-    _part(SphereMesh.new(), Vector3(-0.36,0.15,-0.01), Vector3(0.17,0.22,0.18), skin, true)
-    _part(SphereMesh.new(), Vector3(0.36,0.15,-0.01), Vector3(0.17,0.22,0.18), skin, true)
-
-    left_leg = _part(BoxMesh.new(), Vector3(-0.20,-0.40,0), Vector3(0.19,0.88,0.19), pants)
-    right_leg = _part(BoxMesh.new(), Vector3(0.20,-0.40,0), Vector3(0.19,0.88,0.19), pants)
-    _part(BoxMesh.new(), Vector3(-0.20,-0.90,-0.07), Vector3(0.25,0.14,0.46), shoes)
-    _part(BoxMesh.new(), Vector3(0.20,-0.90,-0.07), Vector3(0.25,0.14,0.46), shoes)
-    _part(BoxMesh.new(), Vector3(-0.20,-0.98,-0.07), Vector3(0.27,0.05,0.48), sole)
-    _part(BoxMesh.new(), Vector3(0.20,-0.98,-0.07), Vector3(0.27,0.05,0.48), sole)
-
-    _part(SphereMesh.new(), Vector3(0,1.34,0), Vector3(0.40,0.40,0.40), skin, true)
-    _part(SphereMesh.new(), Vector3(0,1.55,0.01), Vector3(0.41,0.18,0.41), hair, true)
-    _part(SphereMesh.new(), Vector3(0,1.27,-0.19), Vector3(0.13,0.08,0.06), skin_dark, true)
-    _part(SphereMesh.new(), Vector3(-0.13,1.37,-0.18), Vector3(0.04,0.04,0.04), eye, true)
-    _part(SphereMesh.new(), Vector3(0.13,1.37,-0.18), Vector3(0.04,0.04,0.04), eye, true)
-
-func _part(mesh: Mesh, pos: Vector3, scale_v: Vector3, material: Material, sphere: bool = false) -> MeshInstance3D:
+func _part(parent: Node3D, pos: Vector3, scale_v: Vector3, material: Material, sphere: bool = false) -> MeshInstance3D:
     var mi := MeshInstance3D.new()
     if sphere:
-        var sm := SphereMesh.new()
-        sm.radial_segments = 16
-        sm.rings = 10
-        mi.mesh = sm
+        mi.mesh = SphereMesh.new()
     else:
-        mi.mesh = mesh
+        mi.mesh = BoxMesh.new()
     mi.position = pos
     mi.scale = scale_v
     mi.material_override = material
-    visual.add_child(mi)
+    parent.add_child(mi)
     return mi
 
-func _mat(color: Color, rough: float = 0.8) -> StandardMaterial3D:
+func _material(color: Color, roughness: float = 0.72) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()
     m.albedo_color = color
-    m.roughness = rough
+    m.roughness = roughness
     return m
 
-func enter_vehicle(target: CharacterBody3D) -> void:
-    vehicle = target
-    in_vehicle = true
-    visible = false
-    velocity = Vector3.ZERO
+func _make_arm(pivot_pos: Vector3, arm_mat: Material, hand_mat: Material) -> Node3D:
+    var pivot := Node3D.new()
+    pivot.position = pivot_pos
+    visual.add_child(pivot)
+    _part(pivot, Vector3(0.0, -0.36, 0.0), Vector3(0.16, 0.72, 0.17), arm_mat)
+    _part(pivot, Vector3(0.0, -0.75, -0.01), Vector3(0.17, 0.22, 0.18), hand_mat, true)
+    return pivot
 
-func exit_vehicle() -> void:
-    if vehicle and is_instance_valid(vehicle):
-        global_position = vehicle.global_position + vehicle.global_transform.basis.x * 2.8 + Vector3(0,0.2,0)
-    visible = true
-    in_vehicle = false
-    vehicle = null
-    reset_camera_look()
-    camera.current = true
+func _make_leg(pivot_pos: Vector3, pants_mat: Material, shoe_mat: Material, sole_mat: Material) -> Node3D:
+    var pivot := Node3D.new()
+    pivot.position = pivot_pos
+    visual.add_child(pivot)
+    _part(pivot, Vector3(0.0, -0.44, 0.0), Vector3(0.19, 0.88, 0.19), pants_mat)
+    _part(pivot, Vector3(0.0, -0.94, -0.07), Vector3(0.25, 0.14, 0.46), shoe_mat)
+    _part(pivot, Vector3(0.0, -1.02, -0.07), Vector3(0.27, 0.05, 0.48), sole_mat)
+    return pivot
 
-func set_joystick(v: Vector2) -> void:
-    joystick = v
+func _build_human() -> void:
+    visual = Node3D.new()
+    visual.name = "PlayerVisual"
+    visual.scale = Vector3.ONE * VISUAL_SCALE
+    visual.position = Vector3(0.0, VISUAL_Y, 0.0)
+    add_child(visual)
 
-func set_sprint(enabled: bool) -> void:
-    sprint_touch = enabled
+    var skin := _material(Color("#c98f67"), 0.62)
+    var shirt := _material(Color("#2f8f58"), 0.70)
+    var shirt_dark := _material(Color("#1f6f43"), 0.74)
+    var pants := _material(Color("#22345f"), 0.78)
+    var shoes := _material(Color("#17191c"), 0.66)
+    var sole := _material(Color("#eceae0"), 0.58)
+    var hair := _material(Color("#2a1a12"), 0.82)
+    var eye := _material(Color("#111111"), 0.35)
 
-func look_camera(delta_screen: Vector2) -> void:
-    camera_yaw -= delta_screen.x * look_sensitivity
-    camera_pitch = clamp(camera_pitch - delta_screen.y * look_sensitivity, -0.45, 0.55)
-    $CameraPivot.rotation.y = camera_yaw
-    camera.rotation.x = camera_pitch
+    # Torso + shoulder band
+    _part(visual, Vector3(0.0, 0.55, 0.0), Vector3(0.54, 0.90, 0.38), shirt)
+    _part(visual, Vector3(0.0, 1.02, 0.0), Vector3(0.60, 0.18, 0.42), shirt_dark)
+    # Head (face is on -Z, the forward direction)
+    _part(visual, Vector3(0.0, 1.34, 0.0), Vector3(0.40, 0.42, 0.40), skin, true)
+    _part(visual, Vector3(0.0, 1.50, 0.02), Vector3(0.43, 0.20, 0.43), hair, true)
+    _part(visual, Vector3(-0.08, 1.35, -0.18), Vector3(0.045, 0.045, 0.02), eye, true)
+    _part(visual, Vector3(0.08, 1.35, -0.18), Vector3(0.045, 0.045, 0.02), eye, true)
+
+    left_arm = _make_arm(Vector3(-0.36, 0.90, 0.0), shirt, skin)
+    right_arm = _make_arm(Vector3(0.36, 0.90, 0.0), shirt, skin)
+    left_leg = _make_leg(Vector3(-0.20, 0.04, 0.0), pants, shoes, sole)
+    right_leg = _make_leg(Vector3(0.20, 0.04, 0.0), pants, shoes, sole)
+
+func set_joystick(value: Vector2) -> void:
+    joystick = value
+
+func set_sprint(value: bool) -> void:
+    sprint_touch = value
+
+func jump() -> void:
+    jump_buffer = JUMP_BUFFER_TIME
+
+func look_camera(delta_look: Vector2) -> void:
+    camera_yaw -= delta_look.x * look_sensitivity
+    camera_pitch = clampf(camera_pitch - delta_look.y * look_sensitivity, -0.62, 0.12)
+    _apply_camera()
 
 func reset_camera_look() -> void:
     camera_yaw = 0.0
-    camera_pitch = deg_to_rad(-24.0)
-    $CameraPivot.rotation.y = 0.0
-    camera.rotation.x = camera_pitch
+    camera_pitch = -0.34
+    _apply_camera()
+
+func _apply_camera() -> void:
+    if camera_pivot != null:
+        camera_pivot.rotation.y = camera_yaw
+    if camera != null:
+        camera.rotation.x = camera_pitch
+
+func enter_vehicle(target_vehicle: CharacterBody3D) -> void:
+    in_vehicle = true
+    vehicle = target_vehicle
+    visible = false
+    velocity = Vector3.ZERO
+    if collision_shape != null:
+        collision_shape.set_deferred("disabled", true)
+    if is_instance_valid(vehicle):
+        global_position = vehicle.global_position
+
+func exit_vehicle() -> void:
+    if vehicle != null and is_instance_valid(vehicle):
+        var exit_pos: Vector3 = vehicle.global_position + vehicle.global_transform.basis.x * 2.8
+        var world_root := get_parent()
+        if world_root != null and world_root.has_method("_height"):
+            exit_pos.y = float(world_root.call("_height", exit_pos.x, exit_pos.z)) + 0.95
+        else:
+            exit_pos.y = vehicle.global_position.y + 0.4
+        global_position = exit_pos
+    in_vehicle = false
+    vehicle = null
+    visible = true
+    velocity = Vector3.ZERO
+    if collision_shape != null:
+        collision_shape.set_deferred("disabled", false)
+    if camera != null:
+        camera.current = true
 
 func _physics_process(delta: float) -> void:
     if in_vehicle:
         velocity = Vector3.ZERO
+        # Keep the (invisible) player on the car so distance based systems
+        # (missions, LOD, traffic, culling) track the real position.
+        if vehicle != null and is_instance_valid(vehicle):
+            global_position = vehicle.global_position
         return
 
-    var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-    if joystick.length() > 0.08:
-        input_vec = joystick
-
-    var local_dir := Vector3(input_vec.x, 0.0, input_vec.y)
-    if local_dir.length() > 1.0:
-        local_dir = local_dir.normalized()
-
-    var dir := Vector3.ZERO
-    if local_dir.length() > 0.08:
-        dir = Basis(Vector3.UP, camera_yaw) * local_dir
-        dir.y = 0.0
-        dir = dir.normalized()
-
-    var current_speed := sprint_speed if (Input.is_action_pressed("ui_accept") or sprint_touch) else speed
-    velocity.x = move_toward(velocity.x, dir.x * current_speed, acceleration * delta)
-    velocity.z = move_toward(velocity.z, dir.z * current_speed, acceleration * delta)
-
-    if dir.length() > 0.08:
-        var yaw := atan2(dir.x, dir.z)
-        visual.rotation.y = lerp_angle(visual.rotation.y, yaw, min(1.0, delta * 9.0))
-        walk_time += delta * (11.0 if current_speed > speed else 7.5)
-        var stride := sin(walk_time)
-        var arm_stride := stride * 0.62
-        var leg_stride := stride * 0.72
-        left_arm.rotation.x = lerp(left_arm.rotation.x, arm_stride, delta * 12.0)
-        right_arm.rotation.x = lerp(right_arm.rotation.x, -arm_stride, delta * 12.0)
-        left_leg.rotation.x = lerp(left_leg.rotation.x, -leg_stride, delta * 12.0)
-        right_leg.rotation.x = lerp(right_leg.rotation.x, leg_stride, delta * 12.0)
-        visual.position.y = 0.9 + abs(stride) * 0.028
+    # --- jump (buffered, with coyote time) ---
+    if is_on_floor():
+        coyote_timer = COYOTE_TIME
     else:
-        visual.position.y = move_toward(visual.position.y, 0.9, delta * 4.0)
-        left_arm.rotation.x = lerp(left_arm.rotation.x, 0.0, delta * 10.0)
-        right_arm.rotation.x = lerp(right_arm.rotation.x, 0.0, delta * 10.0)
-        left_leg.rotation.x = lerp(left_leg.rotation.x, 0.0, delta * 10.0)
-        right_leg.rotation.x = lerp(right_leg.rotation.x, 0.0, delta * 10.0)
+        coyote_timer = maxf(0.0, coyote_timer - delta)
+    jump_buffer = maxf(0.0, jump_buffer - delta)
+    if Input.is_action_just_pressed("ui_accept"):
+        jump_buffer = JUMP_BUFFER_TIME
 
-    if not is_on_floor():
+    if jump_buffer > 0.0 and coyote_timer > 0.0:
+        velocity.y = jump_velocity
+        jump_buffer = 0.0
+        coyote_timer = 0.0
+    elif not is_on_floor():
         velocity.y -= gravity * delta
     else:
         velocity.y = 0.0
 
-    move_and_slide()
+    # --- movement ---
+    var input_vec: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+    if joystick.length() > input_vec.length():
+        input_vec = joystick
 
-    # Mobile safety recovery: coarse terrain collision can miss a frame on
-    # some Android devices. Keep the player above the generated ground instead
-    # of letting them fall forever through the world.
+    var local_dir := Vector3(input_vec.x, 0.0, input_vec.y)
+    var dir := Vector3.ZERO
+    if local_dir.length() > 0.01:
+        dir = (Basis(Vector3.UP, camera_yaw) * local_dir).normalized()
+
+    var sprinting: bool = sprint_touch or Input.is_physical_key_pressed(KEY_SHIFT)
+    var current_speed: float = sprint_speed if sprinting else speed
+    var target_velocity: Vector3 = dir * current_speed * minf(1.0, input_vec.length())
+    velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
+    velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
+
+    if dir.length() > 0.01 and visual != null:
+        # The face is on -Z, so rotate -Z (not +Z) toward the walking direction.
+        var yaw: float = atan2(-dir.x, -dir.z)
+        visual.rotation.y = lerp_angle(visual.rotation.y, yaw, minf(1.0, delta * 12.0))
+
+    move_and_slide()
+    _animate_walk(delta)
+    _recover_ground()
+    _clamp_to_world()
+
+func _animate_walk(delta: float) -> void:
+    var planar_speed: float = Vector2(velocity.x, velocity.z).length()
+    var moving: bool = planar_speed > 0.15 and is_on_floor()
+    if moving:
+        walk_time += delta * (6.0 + planar_speed * 0.9)
+    var stride: float = sin(walk_time) if moving else 0.0
+    var arm_stride: float = stride * 0.62
+    var leg_stride: float = stride * 0.70
+    var weight: float = minf(1.0, delta * 12.0)
+    if left_arm != null:
+        left_arm.rotation.x = lerpf(left_arm.rotation.x, arm_stride, weight)
+        right_arm.rotation.x = lerpf(right_arm.rotation.x, -arm_stride, weight)
+        left_leg.rotation.x = lerpf(left_leg.rotation.x, -leg_stride, weight)
+        right_leg.rotation.x = lerpf(right_leg.rotation.x, leg_stride, weight)
+    if visual != null:
+        visual.position.y = VISUAL_Y + absf(stride) * 0.028
+
+func _recover_ground() -> void:
+    # Safety net: if the collider ever misses a frame, put the capsule back
+    # on the procedural terrain height.
     var world_root := get_parent()
-    if world_root and world_root.has_method("_height"):
-        var ground_y: float = world_root.call("_height", global_position.x, global_position.z)
-        var standing_y := ground_y + 0.92
-        # Recover early if a mobile frame misses the coarse terrain collider.
-        # The old -1.5 m threshold allowed the character/camera to visibly sink
-        # before recovery. Keep the capsule center near the generated ground height.
-        if global_position.y < standing_y - 0.35:
-            global_position.y = standing_y
-            velocity.y = 0.0
-            velocity.x *= 0.35
-            velocity.z *= 0.35
-        elif is_on_floor() and global_position.y < standing_y:
-            global_position.y = standing_y
-            velocity.y = 0.0
+    if world_root == null or not world_root.has_method("_height"):
+        return
+    var ground_y: float = float(world_root.call("_height", global_position.x, global_position.z))
+    var standing_y: float = ground_y + 0.92
+    if global_position.y < standing_y - 0.35:
+        global_position.y = standing_y
+        velocity.y = maxf(velocity.y, 0.0)
+
+func _clamp_to_world() -> void:
+    var p: Vector3 = global_position
+    p.x = clampf(p.x, -WORLD_LIMIT, WORLD_LIMIT)
+    p.z = clampf(p.z, -WORLD_LIMIT, WORLD_LIMIT)
+    if p != global_position:
+        global_position = p
