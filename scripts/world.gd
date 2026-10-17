@@ -423,8 +423,8 @@ func _setup_environment() -> void:
     # flat gray/white background. It also contributes ambient/specular light.
     env.background_mode = Environment.BG_SKY
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 0.72
-    env.ambient_light_sky_contribution = 0.78
+    env.ambient_light_energy = 0.48
+    env.ambient_light_sky_contribution = 0.42
 
     var sky := env.sky
     if sky == null:
@@ -437,18 +437,18 @@ func _setup_environment() -> void:
         sky.sky_material = sky_mat
 
     sky_mat.sky_top_color = Color("#173b59")
-    sky_mat.sky_horizon_color = Color("#6f9eae")
+    sky_mat.sky_horizon_color = Color("#9bb9c2")
     sky_mat.ground_bottom_color = Color("#15221d")
-    sky_mat.ground_horizon_color = Color("#4f6a60")
+    sky_mat.ground_horizon_color = Color("#35483b")
     sky_mat.sun_angle_max = 12.0
     sky_mat.sun_curve = 0.08
 
     # Depth fog blends distant buildings into the sky and gives the large world
     # atmospheric depth without using expensive volumetric fog.
-    env.fog_enabled = true
+    env.fog_enabled = false
     env.fog_light_color = Color("#829ca4")
     env.fog_light_energy = 0.34
-    env.fog_density = 0.00008
+    env.fog_density = 0.0
     env.fog_height = 8.0
     env.fog_height_density = 0.00025
     env.fog_sun_scatter = 0.08
@@ -460,9 +460,9 @@ func _setup_environment() -> void:
     # Gentle color correction makes materials read better on mobile screens.
     # Auto exposure and heavy post-processing stay disabled for performance.
     env.adjustment_enabled = true
-    env.adjustment_brightness = 0.98
-    env.adjustment_contrast = 1.14
-    env.adjustment_saturation = 1.10
+    env.adjustment_brightness = 0.92
+    env.adjustment_contrast = 1.20
+    env.adjustment_saturation = 1.16
     env.glow_enabled = false
 
     sun = get_node_or_null("Sun") as DirectionalLight3D
@@ -646,7 +646,23 @@ func _make_terrain() -> void:
     mat.metallic_specular = 0.35
     mat.cull_mode = BaseMaterial3D.CULL_DISABLED
     terrain.material_override = mat
-    add_child(terrain)
+    add_child(terrain) 
+
+    # Android fallback ground plane below the city surface.
+    var ground_underlay := MeshInstance3D.new()
+    ground_underlay.name = "GroundUnderlay"
+    var ground_plane := PlaneMesh.new()
+    ground_plane.size = Vector2(480.0, 480.0)
+    ground_underlay.mesh = ground_plane
+    ground_underlay.position = Vector3(0.0, -0.65, 0.0)
+    ground_underlay.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var underlay_mat := StandardMaterial3D.new()
+    underlay_mat.albedo_color = Color("#526b45")
+    underlay_mat.roughness = 1.0
+    underlay_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    ground_underlay.material_override = underlay_mat
+    ground_underlay.visibility_range_end = 520.0
+    add_child(ground_underlay)
 
     # VISUAL SAFETY FLOOR: a simple opaque ground plane sits just below the
     # procedural terrain. If a mobile GPU fails to draw the vertex-coloured
@@ -1380,7 +1396,7 @@ func _step18_visual_setup() -> void:
     if world_env == null or world_env.environment == null:
         return
     world_env.environment.glow_enabled = false
-    world_env.environment.fog_enabled = true
+    world_env.environment.fog_enabled = false
 
 func _step18_visual_update() -> void:
     if world_env == null or world_env.environment == null or sun == null:
@@ -1393,8 +1409,8 @@ func _step18_visual_update() -> void:
     world_env.environment.ambient_light_energy = lerp(0.30, 1.05, daylight)
     # Keep the near city readable on low-end Android screens. Heavy depth fog
     # was washing out the entire scene; use only a subtle distance haze.
-    world_env.environment.fog_density = 0.00006 + night * 0.00004
-    world_env.environment.fog_height_density = 0.00018
+    world_env.environment.fog_density = 0.0
+    world_env.environment.fog_height_density = 0.0
     world_env.environment.fog_depth_begin = 140.0
     world_env.environment.fog_depth_end = 460.0
     if weather == "rain":
