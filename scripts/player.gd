@@ -17,7 +17,7 @@ var camera: Camera3D
 var walk_time: float = 0.0
 var sprint_touch := false
 var camera_yaw: float = 0.0
-var camera_pitch: float = deg_to_rad(22.0)
+var camera_pitch: float = deg_to_rad(-22.0)
 var in_vehicle: bool = false
 var vehicle: CharacterBody3D
 
@@ -123,7 +123,7 @@ func look_camera(delta_screen: Vector2) -> void:
 
 func reset_camera_look() -> void:
     camera_yaw = 0.0
-    camera_pitch = deg_to_rad(22.0)
+    camera_pitch = deg_to_rad(-22.0)
     $CameraPivot.rotation.y = 0.0
     camera.rotation.x = camera_pitch
 
