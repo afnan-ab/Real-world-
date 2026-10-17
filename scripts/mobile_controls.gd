@@ -40,6 +40,7 @@ func _ready() -> void:
 
     if joystick_visual:
         joystick_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        joystick_visual.visible = false
         joystick_visual.modulate = Color(1, 1, 1, 0)
         _build_joystick_visual()
 
@@ -324,7 +325,7 @@ func _on_run_up() -> void:
     if player and is_instance_valid(player):
         player.set_sprint(false)
     if run_button:
-        run_button.text = "↗  RUN"
+        run_button.text = "RUN"
     _apply_joystick()
 
 
@@ -352,7 +353,7 @@ func _style_mobile_button(button: Button, accent: Color) -> void:
     # Thumb-friendly arcade HUD: strong contrast, colored edge, translucent fill,
     # large readable labels, and an unmistakable tactile pressed state.
     button.focus_mode = Control.FOCUS_NONE
-    button.add_theme_font_size_override("font_size", 14)
+    button.add_theme_font_size_override("font_size", 16)
     button.add_theme_constant_override("outline_size", 2)
     button.add_theme_color_override("font_color", Color("#f7fbff"))
     button.add_theme_color_override("font_hover_color", Color("#ffffff"))
