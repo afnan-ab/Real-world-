@@ -148,6 +148,12 @@ func _ready() -> void:
     _setup_weather_particles()
     _step18_visual_setup()
     _player_ref = get_node_or_null("Player") as Node3D
+    # Start the character at the generated terrain height before the first frame.
+    # This avoids a low spawn or delayed mobile collision leaving the player below ground.
+    if _player_ref != null:
+        var spawn_pos := _player_ref.global_position
+        spawn_pos.y = _height(spawn_pos.x, spawn_pos.z) + 1.0
+        _player_ref.global_position = spawn_pos
     _refresh_dynamic_sector_cache(true)
     _configure_world_lod()
     _apply_step9_culling(self)
