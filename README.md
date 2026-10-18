@@ -43,3 +43,5 @@ This remains a procedural game foundation; photoreal AAA fidelity requires autho
 - Mobile HUD with city minimap, civic markers and wanted indicator
 - Touch sprint control in addition to the existing virtual joystick
 - Keeps the procedural, mobile-friendly Godot architecture so the project stays lightweight
+
+GitHub write access test
