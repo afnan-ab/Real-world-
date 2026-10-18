@@ -3,16 +3,22 @@ extends CanvasLayer
 # Step 13: mobile-safe input layer.
 # Gameplay touch zones use GUI input so joystick/look stay independent from
 # action buttons. Buttons are connected only here to avoid duplicate signals.
+#
+# Bug-fix pass: the joystick ring and knob are now laid out from the real size
+# of the joystick zone (they used to be off-centre and the knob started in the
+# corner), and every Variant-returning call is explicitly typed.
 
 var world: Node
 var player: Node
-var joystick := Vector2.ZERO
-var joystick_touch_id := -1
-var look_touch_id := -1
-var look_last := Vector2.ZERO
+var joystick: Vector2 = Vector2.ZERO
+var joystick_touch_id: int = -1
+var look_touch_id: int = -1
+var look_last: Vector2 = Vector2.ZERO
 var joystick_zone: Control
 var look_zone: Control
 var knob: ColorRect
+var joystick_ring: Panel
+var ring_style: StyleBoxFlat
 var run_button: Button
 var act_button: Button
 var jump_button: Button
@@ -22,9 +28,9 @@ var gas_button: Button
 var brake_button: Button
 var exit_car_button: Button
 var joystick_visual: Control
-var run_touch := false
-var gas_touch := false
-var brake_touch := false
+var run_touch: bool = false
+var gas_touch: bool = false
+var brake_touch: bool = false
 
 const LOOK_SENSITIVITY := 0.72
 const INPUT_DEADZONE := 0.08
@@ -42,18 +48,20 @@ func _ready() -> void:
         joystick_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
         joystick_visual.visible = false
         joystick_visual.modulate = Color(1, 1, 1, 0)
-        _build_joystick_visual()
 
     if joystick_zone:
         joystick_zone.mouse_filter = Control.MOUSE_FILTER_STOP
         joystick_zone.gui_input.connect(_on_joystick_gui_input)
+        _build_joystick_visual()
 
         knob = ColorRect.new()
         knob.size = Vector2(40, 40)
         knob.color = Color(0.85, 0.92, 0.95, 0.52)
         knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
         joystick_zone.add_child(knob)
+        joystick_zone.resized.connect(_layout_joystick_visuals)
         _reset_joystick()
+        _layout_joystick_visuals.call_deferred()
 
     if look_zone:
         look_zone.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -115,44 +123,40 @@ func _ready() -> void:
         exit_car_button.mouse_filter = Control.MOUSE_FILTER_STOP
         exit_car_button.pressed.connect(_on_exit_car_pressed)
 
-func _layout_mobile_hud() -> void:
-    var size := get_viewport().get_visible_rect().size
-    var short_side := min(size.x, size.y)
-    var button_h := clamp(short_side * 0.112, 64.0, 88.0)
-    var button_w := clamp(short_side * 0.150, 88.0, 120.0)
-    var margin := clamp(short_side * 0.025, 16.0, 26.0)
-    if run_button and not player.in_vehicle:
-        run_button.custom_minimum_size = Vector2.ZERO
-        run_button.size = Vector2(button_w, button_h)
-        run_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h - margin)
-    if jump_button and not player.in_vehicle:
-        jump_button.custom_minimum_size = Vector2.ZERO
-        jump_button.size = Vector2(button_w, button_h)
-        jump_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
-    if action_button and not player.in_vehicle:
-        action_button.custom_minimum_size = Vector2.ZERO
-        action_button.size = Vector2(button_w, button_h)
-        action_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
-    if drive_button and not player.in_vehicle:
-        drive_button.custom_minimum_size = Vector2.ZERO
-        drive_button.size = Vector2(button_w, button_h)
-        drive_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
-    if gas_button and player.in_vehicle:
-        gas_button.custom_minimum_size = Vector2.ZERO
-        gas_button.size = Vector2(button_w, button_h)
-        gas_button.position = Vector2(size.x - button_w * 2.05 - margin, size.y - button_h * 2.15 - margin)
-    if brake_button and player.in_vehicle:
-        brake_button.custom_minimum_size = Vector2.ZERO
-        brake_button.size = Vector2(button_w, button_h)
-        brake_button.position = Vector2(size.x - button_w - margin, size.y - button_h * 2.15 - margin)
-    if exit_car_button and player.in_vehicle:
-        exit_car_button.custom_minimum_size = Vector2.ZERO
-        exit_car_button.size = Vector2(button_w, button_h)
-        exit_car_button.position = Vector2(size.x - button_w - margin, size.y - button_h - margin)
+func _player_in_car() -> bool:
+    if player == null or not is_instance_valid(player):
+        return false
+    return bool(player.get("in_vehicle"))
 
-    for button in [run_button, jump_button, action_button, drive_button, gas_button, brake_button, exit_car_button]:
-        if button:
-            button.pivot_offset = button.size * 0.5
+func _layout_mobile_hud() -> void:
+    var view_size: Vector2 = get_viewport().get_visible_rect().size
+    var short_side: float = minf(view_size.x, view_size.y)
+    var button_h: float = clampf(short_side * 0.112, 64.0, 88.0)
+    var button_w: float = clampf(short_side * 0.150, 88.0, 120.0)
+    var margin: float = clampf(short_side * 0.025, 16.0, 26.0)
+    var in_car: bool = _player_in_car()
+    var bottom_y: float = view_size.y - button_h - margin
+    var upper_y: float = view_size.y - button_h * 2.15 - margin
+    var right_x: float = view_size.x - button_w - margin
+    var left_x: float = view_size.x - button_w * 2.05 - margin
+
+    if not in_car:
+        _place_button(run_button, Vector2(button_w, button_h), Vector2(left_x, bottom_y))
+        _place_button(jump_button, Vector2(button_w, button_h), Vector2(right_x, bottom_y))
+        _place_button(action_button, Vector2(button_w, button_h), Vector2(left_x, upper_y))
+        _place_button(drive_button, Vector2(button_w, button_h), Vector2(right_x, upper_y))
+    else:
+        _place_button(gas_button, Vector2(button_w, button_h), Vector2(left_x, upper_y))
+        _place_button(brake_button, Vector2(button_w, button_h), Vector2(right_x, upper_y))
+        _place_button(exit_car_button, Vector2(button_w, button_h), Vector2(right_x, bottom_y))
+
+func _place_button(button: Button, button_size: Vector2, button_pos: Vector2) -> void:
+    if button == null:
+        return
+    button.custom_minimum_size = Vector2.ZERO
+    button.size = button_size
+    button.position = button_pos
+    button.pivot_offset = button_size * 0.5
 
 func _process(_delta: float) -> void:
     if player == null or not is_instance_valid(player):
@@ -165,7 +169,7 @@ func _process(_delta: float) -> void:
     _apply_joystick()
 
 func _update_context_controls() -> void:
-    var in_car := player != null and is_instance_valid(player) and player.in_vehicle
+    var in_car: bool = _player_in_car()
     if run_button: run_button.visible = not in_car
     if jump_button: jump_button.visible = not in_car
     if action_button: action_button.visible = not in_car
@@ -190,17 +194,31 @@ func _update_context_controls() -> void:
         exit_car_button.text = "EXIT"
 
 func _connect_hold_button(button: Button, gas: bool, brake: bool) -> void:
-    if button == null: return
+    if button == null:
+        return
     button.focus_mode = Control.FOCUS_NONE
     button.mouse_filter = Control.MOUSE_FILTER_STOP
-    button.button_down.connect(func(): gas_touch = gas; brake_touch = brake; _apply_vehicle_pedals())
-    button.button_up.connect(func(): gas_touch = false; brake_touch = false; _apply_vehicle_pedals())
+    button.button_down.connect(func() -> void:
+        gas_touch = gas
+        brake_touch = brake
+        _apply_vehicle_pedals())
+    button.button_up.connect(func() -> void:
+        gas_touch = false
+        brake_touch = false
+        _apply_vehicle_pedals())
+
+func _current_vehicle() -> Object:
+    if not _player_in_car():
+        return null
+    var car: Object = player.get("vehicle")
+    if car != null and is_instance_valid(car):
+        return car
+    return null
 
 func _apply_vehicle_pedals() -> void:
-    if player == null or not is_instance_valid(player) or not player.in_vehicle or player.vehicle == null: return
-    var car = player.vehicle
-    if is_instance_valid(car) and car.has_method("set_mobile_pedals"):
-        car.set_mobile_pedals(gas_touch, brake_touch)
+    var car: Object = _current_vehicle()
+    if car != null and car.has_method("set_mobile_pedals"):
+        car.call("set_mobile_pedals", gas_touch, brake_touch)
 
 func _on_exit_car_pressed() -> void:
     if world and world.has_method("_on_hud_act_pressed"):
@@ -243,7 +261,7 @@ func _on_joystick_gui_input(event: InputEvent) -> void:
         joystick_zone.accept_event()
 
 func _on_look_gui_input(event: InputEvent) -> void:
-    if player == null:
+    if player == null or not is_instance_valid(player):
         return
 
     if event is InputEventScreenTouch:
@@ -256,8 +274,8 @@ func _on_look_gui_input(event: InputEvent) -> void:
             look_zone.accept_event()
 
     elif event is InputEventScreenDrag and event.index == look_touch_id:
-        var delta_look := (event.position - look_last) * LOOK_SENSITIVITY
-        player.look_camera(delta_look)
+        var delta_look: Vector2 = (event.position - look_last) * LOOK_SENSITIVITY
+        player.call("look_camera", delta_look)
         look_last = event.position
         look_zone.accept_event()
 
@@ -271,15 +289,19 @@ func _on_look_gui_input(event: InputEvent) -> void:
         look_zone.accept_event()
 
     elif event is InputEventMouseMotion and look_touch_id == -2:
-        player.look_camera((event.position - look_last) * LOOK_SENSITIVITY)
+        player.call("look_camera", (event.position - look_last) * LOOK_SENSITIVITY)
         look_last = event.position
         look_zone.accept_event()
 
+func _joystick_radius() -> float:
+    if joystick_zone == null:
+        return 60.0
+    return maxf(minf(joystick_zone.size.x, joystick_zone.size.y) * 0.38, 1.0)
+
 func _set_joystick_from_local(pos: Vector2) -> void:
-    var center := joystick_zone.size * 0.5
-    var radius := min(joystick_zone.size.x, joystick_zone.size.y) * 0.5
-    var v := (pos - center) / max(radius, 1.0)
-    joystick = Vector2(clamp(v.x, -1.0, 1.0), clamp(v.y, -1.0, 1.0))
+    var center: Vector2 = joystick_zone.size * 0.5
+    var v: Vector2 = (pos - center) / _joystick_radius()
+    joystick = Vector2(clampf(v.x, -1.0, 1.0), clampf(v.y, -1.0, 1.0))
     if joystick.length() > 1.0:
         joystick = joystick.normalized()
     if joystick.length() < INPUT_DEADZONE:
@@ -290,9 +312,19 @@ func _set_joystick_from_local(pos: Vector2) -> void:
 func _move_knob() -> void:
     if knob == null or joystick_zone == null:
         return
-    var center := joystick_zone.size * 0.5
-    var travel := min(joystick_zone.size.x, joystick_zone.size.y) * 0.34
-    knob.position = center + joystick * travel - knob.size * 0.5
+    var center: Vector2 = joystick_zone.size * 0.5
+    knob.position = center + joystick * _joystick_radius() - knob.size * 0.5
+
+func _layout_joystick_visuals() -> void:
+    if joystick_zone == null:
+        return
+    if joystick_ring != null:
+        var diameter: float = maxf(minf(joystick_zone.size.x, joystick_zone.size.y) - 8.0, 20.0)
+        joystick_ring.size = Vector2(diameter, diameter)
+        joystick_ring.position = (joystick_zone.size - joystick_ring.size) * 0.5
+        if ring_style != null:
+            ring_style.set_corner_radius_all(int(diameter * 0.5))
+    _move_knob()
 
 func _reset_joystick() -> void:
     joystick = Vector2.ZERO
@@ -302,20 +334,21 @@ func _apply_joystick() -> void:
     if player == null or not is_instance_valid(player):
         return
 
-    var applied := joystick
+    var applied: Vector2 = joystick
     if run_touch and applied.length() < INPUT_DEADZONE:
         applied = Vector2(0.0, -1.0)
 
-    if player.in_vehicle and player.vehicle and is_instance_valid(player.vehicle):
-        player.vehicle.set_joystick(applied)
+    var car: Object = _current_vehicle()
+    if car != null:
+        car.call("set_joystick", applied)
         _apply_vehicle_pedals()
     else:
-        player.set_joystick(applied)
+        player.call("set_joystick", applied)
 
 func _on_run_down() -> void:
     run_touch = true
     if player and is_instance_valid(player):
-        player.set_sprint(true)
+        player.call("set_sprint", true)
     if run_button:
         run_button.text = "STOP"
     _apply_joystick()
@@ -323,28 +356,25 @@ func _on_run_down() -> void:
 func _on_run_up() -> void:
     run_touch = false
     if player and is_instance_valid(player):
-        player.set_sprint(false)
+        player.call("set_sprint", false)
     if run_button:
         run_button.text = "RUN"
     _apply_joystick()
 
-
 func _build_joystick_visual() -> void:
     if joystick_zone == null:
         return
-    var ring := Panel.new()
-    ring.name = "JoystickGlassRing"
-    ring.position = Vector2(8, 8)
-    ring.size = Vector2(134, 134)
-    ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    var ring_style := StyleBoxFlat.new()
+    joystick_ring = Panel.new()
+    joystick_ring.name = "JoystickGlassRing"
+    joystick_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    ring_style = StyleBoxFlat.new()
     ring_style.bg_color = Color(0.02, 0.05, 0.065, 0.30)
     ring_style.border_color = Color(0.58, 0.82, 0.84, 0.36)
     ring_style.set_border_width_all(2)
     ring_style.set_corner_radius_all(67)
     ring_style.anti_aliasing = true
-    ring.add_theme_stylebox_override("panel", ring_style)
-    joystick_zone.add_child(ring)
+    joystick_ring.add_theme_stylebox_override("panel", ring_style)
+    joystick_zone.add_child(joystick_ring)
 
 func _style_mobile_button(button: Button, accent: Color) -> void:
     if button == null:
