@@ -1,0 +1,8 @@
+name: Connector write-access diagnostic
+on:
+  workflow_dispatch:
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "GitHub connector write-access diagnostic file; not used for builds."
