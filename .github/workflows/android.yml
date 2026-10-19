@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
     steps:
       - name: Checkout
@@ -43,8 +47,7 @@ jobs:
           echo "$ANDROID_SDK_ROOT/build-tools/35.0.0" >> "$GITHUB_PATH"
 
       - name: Restore signing keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: env.KEYSTORE_B64 != ''
         run: |
           mkdir -p .github/keystore
           printf '%s' "$KEYSTORE_B64" | base64 --decode > .github/keystore/realworld.keystore
@@ -53,6 +56,7 @@ jobs:
 
       - name: Create Android debug keystore
         run: |
+          mkdir -p .github/keystore
           keytool -genkeypair -v \
             -keystore .github/keystore/debug.keystore \
             -storepass android \
@@ -64,9 +68,7 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Verify signing keystore
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        if: env.KEYSTORE_B64 != ''
         run: |
           keytool -list \
             -keystore .github/keystore/realworld.keystore \
