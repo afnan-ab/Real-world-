@@ -120,6 +120,35 @@ jobs:
           done
           ls -la assets/models
 
+      - name: Fetch free CC0 textures (ambientCG)
+        # Optional: Grass001 -> ground, Concrete034 -> city. If a download fails
+        # the game keeps its built-in colours. The log lists what was found.
+        continue-on-error: true
+        run: |
+          mkdir -p assets/textures /tmp/tex
+          fetch_tex() {
+            id="$1"
+            target="$2"
+            wget -q -U "Mozilla/5.0" -O "/tmp/tex/$id.zip" "https://ambientcg.com/get?file=${id}_1K-JPG.zip" || { echo "download failed: $id"; return 0; }
+            mkdir -p "/tmp/tex/$id"
+            unzip -q -o "/tmp/tex/$id.zip" -d "/tmp/tex/$id" || { echo "unzip failed: $id"; return 0; }
+            echo "--- files in $id ---"
+            find "/tmp/tex/$id" -type f | sort
+            color=$(find "/tmp/tex/$id" -type f -iname "*_Color.jpg" | head -1)
+            normal=$(find "/tmp/tex/$id" -type f -iname "*_NormalGL.jpg" | head -1)
+            if [ -n "$color" ]; then
+              cp "$color" "assets/textures/${target}_albedo.jpg"
+              echo "copied ${target}_albedo.jpg"
+            fi
+            if [ -n "$normal" ]; then
+              cp "$normal" "assets/textures/${target}_normal.jpg"
+              echo "copied ${target}_normal.jpg"
+            fi
+          }
+          fetch_tex Grass001 ground || true
+          fetch_tex Concrete034 city || true
+          ls -la assets/textures
+
       - name: Import assets (models and textures from assets/)
         run: |
           ./Godot_v4.4.1-stable_linux.x86_64 \
