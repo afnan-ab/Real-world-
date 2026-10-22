@@ -107,6 +107,10 @@ jobs:
           mkdir -p assets/models /tmp/kenney
           wget -q -U "Mozilla/5.0" -O /tmp/kenney.zip https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip
           unzip -q /tmp/kenney.zip -d /tmp/kenney
+          echo "--- folders in the pack ---"
+          find /tmp/kenney -type d | sort
+          echo "--- .png files in the pack ---"
+          find /tmp/kenney -type f -iname "*.png" | sort | head -60
           echo "--- .glb files found in the pack ---"
           find /tmp/kenney -type f -iname "*.glb" | sort
           for name in sedan hatchback-sports suv taxi van sedan-sports police ambulance firetruck; do
@@ -118,7 +122,20 @@ jobs:
               echo "not copied: $name.glb"
             fi
           done
-          ls -la assets/models
+          # The cars take their colours from colormap.png. Keep it next to the
+          # models, in a Textures/ folder, where the .glb files look for it.
+          tex=$(find /tmp/kenney -type f -ipath "*GLB*" -iname "colormap.png" | head -1)
+          if [ -z "$tex" ]; then
+            tex=$(find /tmp/kenney -type f -iname "colormap.png" | head -1)
+          fi
+          if [ -n "$tex" ]; then
+            mkdir -p assets/models/Textures
+            cp "$tex" assets/models/Textures/colormap.png
+            echo "copied colormap.png from $tex"
+          else
+            echo "no colormap.png found"
+          fi
+          ls -laR assets/models
 
       - name: Fetch free CC0 textures (ambientCG)
         # Optional: Grass001 -> ground, Concrete034 -> city. If a download fails
