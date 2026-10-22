@@ -99,6 +99,27 @@ jobs:
             --quit \
             --verbose
 
+      - name: Fetch free CC0 car models (Kenney Car Kit)
+        # Optional: if the download or the file names differ, the build goes on
+        # with the built-in simple cars. The log lists every .glb that was found.
+        continue-on-error: true
+        run: |
+          mkdir -p assets/models /tmp/kenney
+          wget -q -U "Mozilla/5.0" -O /tmp/kenney.zip https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip
+          unzip -q /tmp/kenney.zip -d /tmp/kenney
+          echo "--- .glb files found in the pack ---"
+          find /tmp/kenney -type f -iname "*.glb" | sort
+          for name in sedan hatchback-sports suv taxi van sedan-sports police ambulance firetruck; do
+            src=$(find /tmp/kenney -type f -iname "$name.glb" | head -1)
+            if [ -n "$src" ] && [ ! -e "assets/models/$name.glb" ]; then
+              cp "$src" "assets/models/$name.glb"
+              echo "copied $name.glb"
+            else
+              echo "not copied: $name.glb"
+            fi
+          done
+          ls -la assets/models
+
       - name: Import assets (models and textures from assets/)
         run: |
           ./Godot_v4.4.1-stable_linux.x86_64 \
