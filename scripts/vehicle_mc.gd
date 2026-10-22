@@ -4,7 +4,8 @@ extends "res://scripts/vehicle.gd"
 #  - wider world boundary for the Mad City sized map
 #  - if res://assets/models/car_1.glb (or sedan.glb from the Kenney Car Kit)
 #    exists it replaces the procedural body (auto-fitted; set MC_CAR_FLIP to
-#    true if it drives backwards)
+#    true if it drives backwards). If the model has no colour texture it is
+#    painted with the car's colour.
 
 const AssetFit := preload("res://scripts/asset_fit.gd")
 const MC_VEHICLE_LIMIT := 345.0
@@ -20,7 +21,7 @@ func _build_vehicle() -> void:
             break
     if path == "":
         return
-    var model: Node3D = AssetFit.load_model(path, 4.4, false, MC_CAR_FLIP)
+    var model: Node3D = AssetFit.load_model(path, 4.4, false, MC_CAR_FLIP, setup_color)
     if model == null or visual == null:
         return
     for child in visual.get_children():
