@@ -6,6 +6,8 @@ extends "res://scripts/mad_city_perf.gd"
 # direction, centre), so you normally do not have to touch anything.
 # Kenney Car Kit file names work as they are (sedan.glb, police.glb, ...).
 # Set MC_CAR_FLIP to true if the cars drive backwards.
+# If a model arrives without its colour texture, it is painted with the car's
+# body colour instead of staying plain white.
 
 const AssetFit := preload("res://scripts/asset_fit.gd")
 
@@ -55,7 +57,7 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
         return root
     var path: String = _mc_car_paths_found[_mc_car_pick % _mc_car_paths_found.size()]
     _mc_car_pick += 1
-    var model: Node3D = AssetFit.load_model(path, MC_CAR_LENGTH, true, MC_CAR_FLIP)
+    var model: Node3D = AssetFit.load_model(path, MC_CAR_LENGTH, true, MC_CAR_FLIP, body_color)
     if model == null:
         return root
     for child in root.get_children():
@@ -65,10 +67,10 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     return root
 
 # Swap the look of an emergency vehicle but keep its flashing light bar.
-func _mc_swap_model(node: Node3D, bar_mat: StandardMaterial3D, path: String, length: float) -> void:
+func _mc_swap_model(node: Node3D, bar_mat: StandardMaterial3D, path: String, length: float, tint: Color) -> void:
     if path == "":
         return
-    var model: Node3D = AssetFit.load_model(path, length, true, MC_CAR_FLIP)
+    var model: Node3D = AssetFit.load_model(path, length, true, MC_CAR_FLIP, tint)
     if model == null:
         return
     for child in node.get_children():
@@ -81,12 +83,12 @@ func _mc_swap_model(node: Node3D, bar_mat: StandardMaterial3D, path: String, len
 
 func _mc_make_ambulance() -> Dictionary:
     var d: Dictionary = super._mc_make_ambulance()
-    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_AMBULANCE_PATHS), 5.2)
+    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_AMBULANCE_PATHS), 5.2, Color("#f1f3f4"))
     return d
 
 func _mc_make_fire_truck() -> Dictionary:
     var d: Dictionary = super._mc_make_fire_truck()
-    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_FIRE_TRUCK_PATHS), 7.0)
+    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_FIRE_TRUCK_PATHS), 7.0, Color("#b3201a"))
     return d
 
 func _mc_spawn_cop(tx: float, tz: float) -> void:
@@ -95,7 +97,7 @@ func _mc_spawn_cop(tx: float, tz: float) -> void:
     if path == "" or _mc_cops.is_empty():
         return
     var c: Dictionary = _mc_cops[_mc_cops.size() - 1]
-    _mc_swap_model(c["node"], c["bar_mat"], path, MC_CAR_LENGTH)
+    _mc_swap_model(c["node"], c["bar_mat"], path, MC_CAR_LENGTH, Color("#e8ecef"))
 
 func _mc_tex_material(albedo: Texture2D, normal: Texture2D, tile: float, with_vertex_colors: bool) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()
