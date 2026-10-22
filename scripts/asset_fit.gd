@@ -34,11 +34,27 @@ static func _aabb_of(node: Node, xf: Transform3D) -> AABB:
                 has = true
     return result
 
+# Fallback when a model lost its colour texture: give every untextured material
+# the tint colour so the car is not plain white.
+static func _tint_untextured(node: Node, tint: Color) -> void:
+    var mi: MeshInstance3D = node as MeshInstance3D
+    if mi != null and mi.mesh != null:
+        for s in range(mi.mesh.get_surface_count()):
+            var sm: StandardMaterial3D = mi.get_active_material(s) as StandardMaterial3D
+            if sm != null and sm.albedo_texture == null:
+                var dup: StandardMaterial3D = sm.duplicate() as StandardMaterial3D
+                dup.albedo_color = tint
+                dup.vertex_color_use_as_albedo = false
+                mi.set_surface_override_material(s, dup)
+    for child in node.get_children():
+        _tint_untextured(child, tint)
+
 # Loads a .glb / .gltf / .tscn model, scales it so its longest horizontal side is
 # target_length metres, turns that long side towards the game's forward axis
 # (X when forward_is_x, otherwise Z), centres it on x / z and puts its bottom on
-# y = 0. flip turns it 180 degrees if the model drives backwards.
-static func load_model(path: String, target_length: float, forward_is_x: bool, flip: bool) -> Node3D:
+# y = 0. flip turns it 180 degrees if the model drives backwards. When tint has
+# alpha > 0, untextured materials are painted with it (colour fallback).
+static func load_model(path: String, target_length: float, forward_is_x: bool, flip: bool, tint: Color = Color(0.0, 0.0, 0.0, 0.0)) -> Node3D:
     if not ResourceLoader.exists(path):
         return null
     var res: Resource = load(path)
@@ -69,6 +85,8 @@ static func load_model(path: String, target_length: float, forward_is_x: bool, f
     var box: AABB = Transform3D(basis, Vector3.ZERO) * aabb
     var center: Vector3 = box.position + box.size * 0.5
     inst3.transform = Transform3D(basis, Vector3(-center.x, -box.position.y, -center.z))
+    if tint.a > 0.0:
+        _tint_untextured(inst3, tint)
     var holder := Node3D.new()
     holder.name = "AssetModel"
     holder.add_child(inst3)
