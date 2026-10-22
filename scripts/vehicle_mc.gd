@@ -2,17 +2,25 @@ extends "res://scripts/vehicle.gd"
 
 # Same driveable car as vehicle.gd (that file is untouched). Changes:
 #  - wider world boundary for the Mad City sized map
-#  - if res://assets/models/car_1.glb exists it replaces the procedural body
-#    (auto-fitted; set MC_CAR_FLIP to true if it drives backwards)
+#  - if res://assets/models/car_1.glb (or sedan.glb from the Kenney Car Kit)
+#    exists it replaces the procedural body (auto-fitted; set MC_CAR_FLIP to
+#    true if it drives backwards)
 
 const AssetFit := preload("res://scripts/asset_fit.gd")
 const MC_VEHICLE_LIMIT := 345.0
-const MC_PLAYER_CAR_MODEL := "res://assets/models/car_1.glb"
+const MC_PLAYER_CAR_PATHS: Array = ["res://assets/models/car_1.glb", "res://assets/models/sedan.glb"]
 const MC_CAR_FLIP := false
 
 func _build_vehicle() -> void:
     super._build_vehicle()
-    var model: Node3D = AssetFit.load_model(MC_PLAYER_CAR_MODEL, 4.4, false, MC_CAR_FLIP)
+    var path: String = ""
+    for p in MC_PLAYER_CAR_PATHS:
+        if ResourceLoader.exists(String(p)):
+            path = String(p)
+            break
+    if path == "":
+        return
+    var model: Node3D = AssetFit.load_model(path, 4.4, false, MC_CAR_FLIP)
     if model == null or visual == null:
         return
     for child in visual.get_children():
