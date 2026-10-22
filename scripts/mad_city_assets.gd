@@ -4,20 +4,29 @@ extends "res://scripts/mad_city_perf.gd"
 # res://assets/ the game uses them, otherwise it keeps the procedural look.
 # File names are listed in assets/README.md. Models are auto-fitted (scale,
 # direction, centre), so you normally do not have to touch anything.
+# Kenney Car Kit file names work as they are (sedan.glb, police.glb, ...).
 # Set MC_CAR_FLIP to true if the cars drive backwards.
 
 const AssetFit := preload("res://scripts/asset_fit.gd")
 
+# Own names first, then Kenney Car Kit names. Files that exist are used in turn.
 const MC_CAR_PATHS: Array = [
     "res://assets/models/car_1.glb",
     "res://assets/models/car_2.glb",
     "res://assets/models/car_3.glb",
     "res://assets/models/car_4.glb",
     "res://assets/models/car_5.glb",
-    "res://assets/models/car_6.glb"
+    "res://assets/models/car_6.glb",
+    "res://assets/models/sedan.glb",
+    "res://assets/models/hatchback-sports.glb",
+    "res://assets/models/suv.glb",
+    "res://assets/models/taxi.glb",
+    "res://assets/models/van.glb",
+    "res://assets/models/sedan-sports.glb"
 ]
-const MC_AMBULANCE_PATH := "res://assets/models/ambulance.glb"
-const MC_FIRE_TRUCK_PATH := "res://assets/models/fire_truck.glb"
+const MC_AMBULANCE_PATHS: Array = ["res://assets/models/ambulance.glb"]
+const MC_FIRE_TRUCK_PATHS: Array = ["res://assets/models/fire_truck.glb", "res://assets/models/firetruck.glb"]
+const MC_POLICE_PATHS: Array = ["res://assets/models/police.glb"]
 const MC_CAR_LENGTH := 4.4
 const MC_CAR_FLIP := false
 const MC_TEX_BRIGHTNESS := 1.6
@@ -32,6 +41,12 @@ func _ready() -> void:
             _mc_car_paths_found.append(String(p))
     super._ready()
     _mc_apply_textures()
+
+func _mc_first_existing(paths: Array) -> String:
+    for p in paths:
+        if ResourceLoader.exists(String(p)):
+            return String(p)
+    return ""
 
 # Every car built by the world (AI traffic, cop cars) can use your car models.
 func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node3D:
@@ -49,11 +64,10 @@ func _make_car(pos: Vector3, body_color: Color, rotation_y: float = 0.0) -> Node
     root.add_child(model)
     return root
 
-func _mc_swap_model(d: Dictionary, path: String, length: float) -> void:
-    if not ResourceLoader.exists(path):
+# Swap the look of an emergency vehicle but keep its flashing light bar.
+func _mc_swap_model(node: Node3D, bar_mat: StandardMaterial3D, path: String, length: float) -> void:
+    if path == "":
         return
-    var node: Node3D = d["node"]
-    var bar_mat: StandardMaterial3D = d["bar_mat"]
     var model: Node3D = AssetFit.load_model(path, length, true, MC_CAR_FLIP)
     if model == null:
         return
@@ -61,17 +75,27 @@ func _mc_swap_model(d: Dictionary, path: String, length: float) -> void:
         var mi: MeshInstance3D = child as MeshInstance3D
         if mi != null and mi.material_override != bar_mat:
             mi.visible = false
+        elif String(child.name) == "AssetModel":
+            (child as Node3D).visible = false
     node.add_child(model)
 
 func _mc_make_ambulance() -> Dictionary:
     var d: Dictionary = super._mc_make_ambulance()
-    _mc_swap_model(d, MC_AMBULANCE_PATH, 5.2)
+    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_AMBULANCE_PATHS), 5.2)
     return d
 
 func _mc_make_fire_truck() -> Dictionary:
     var d: Dictionary = super._mc_make_fire_truck()
-    _mc_swap_model(d, MC_FIRE_TRUCK_PATH, 7.0)
+    _mc_swap_model(d["node"], d["bar_mat"], _mc_first_existing(MC_FIRE_TRUCK_PATHS), 7.0)
     return d
+
+func _mc_spawn_cop(tx: float, tz: float) -> void:
+    super._mc_spawn_cop(tx, tz)
+    var path: String = _mc_first_existing(MC_POLICE_PATHS)
+    if path == "" or _mc_cops.is_empty():
+        return
+    var c: Dictionary = _mc_cops[_mc_cops.size() - 1]
+    _mc_swap_model(c["node"], c["bar_mat"], path, MC_CAR_LENGTH)
 
 func _mc_tex_material(albedo: Texture2D, normal: Texture2D, tile: float, with_vertex_colors: bool) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()
