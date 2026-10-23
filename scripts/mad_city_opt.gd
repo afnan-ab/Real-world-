@@ -1,6 +1,6 @@
 extends "res://scripts/mad_city_assets.gd"
 
-# Optimization + "bright low-poly" style layer (top of the stack).
+# Optimization + "gritty Eastern-European city" style layer.
 #  1. The city used to be three huge meshes (buildings, dark windows, lit
 #     windows) that were drawn in full even when you only saw a small part of
 #     the city. They are split into 80 m chunks: the GPU skips every chunk that
@@ -9,10 +9,10 @@ extends "res://scripts/mad_city_assets.gd"
 #     and up when there is room (50% .. 100%), the HUD stays sharp.
 #  3. Sun shadows switch on only when the phone has headroom.
 #  4. Distance fog is on: cheap, and it hides the chunk fade-out.
-#  5. Style: every building gets its own bright colour (red, orange, yellow,
-#     teal, blue, cream, pink, green, violet) chosen per building, and the whole
-#     image gets a little more saturation and contrast. The traffic and
-#     pedestrian counts are back at their full values.
+#  5. Style: research showed MadOut2 looks like a gritty post-Soviet city, not a
+#     cartoon, so every building gets its own muted concrete / brick / faded
+#     paint colour (chosen per building) and the image gets only a light
+#     saturation and contrast lift. Full traffic and pedestrian counts.
 # Not measured: I cannot run Godot here.
 
 const MC_CHUNK_CELL := 80.0
@@ -24,9 +24,9 @@ const MC_SCALE_MIN := 0.5
 const MC_SCALE_MAX := 1.0
 const MC_BIG_KEY := 99999
 const MC_STYLE_PALETTE: Array = [
-    Color("#e0533d"), Color("#f2a33a"), Color("#f4d35e"), Color("#3fa7a0"),
-    Color("#4f86c6"), Color("#e8dcc4"), Color("#c0577a"), Color("#6aa84f"),
-    Color("#d9d9d9"), Color("#8a6fb3")
+    Color("#a39e93"), Color("#8f8b82"), Color("#b0a58f"), Color("#9a7b66"),
+    Color("#7d8a8f"), Color("#a8a38c"), Color("#8a6f63"), Color("#6f7a72"),
+    Color("#b8b4a8"), Color("#93806d")
 ]
 
 var _opt_acc: float = 0.0
@@ -42,11 +42,11 @@ func _ready() -> void:
     if _mc_env != null:
         _mc_env.fog_enabled = true
         _mc_env.adjustment_enabled = true
-        _mc_env.adjustment_saturation = 1.25
-        _mc_env.adjustment_contrast = 1.06
-        _mc_env.adjustment_brightness = 1.03
+        _mc_env.adjustment_saturation = 1.08
+        _mc_env.adjustment_contrast = 1.05
+        _mc_env.adjustment_brightness = 1.0
 
-# Bright colour for a grey building wall triangle. All triangles of one building
+# Muted colour for a grey building wall triangle. All triangles of one building
 # land in the same quadrant of its block, so the whole building gets one colour.
 func _opt_vivid(a: Vector3, b: Vector3, c: Vector3, orig: Color) -> Color:
     var cen: Vector3 = (a + b + c) / 3.0
