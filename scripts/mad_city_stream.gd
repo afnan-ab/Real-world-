@@ -24,6 +24,7 @@ const MC_PARK := Vector3(6000.0, 0.0, 6000.0)
 
 var _str_timer: float = 0.0
 var _str_density_timer: float = 2.5
+var _str_sort_p: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
     super._ready()
@@ -158,8 +159,22 @@ func _str_density_factor() -> float:
         return 0.75
     return 0.5
 
+# Farthest first (these are the ones that get parked).
+func _str_cmp_car(x: Dictionary, y: Dictionary) -> bool:
+    var dx: float = Vector2(float(x["x"]) - _str_sort_p.x, float(x["z"]) - _str_sort_p.z).length()
+    var dy: float = Vector2(float(y["x"]) - _str_sort_p.x, float(y["z"]) - _str_sort_p.z).length()
+    return dx > dy
+
+func _str_cmp_ped(x: Dictionary, y: Dictionary) -> bool:
+    var nx: Node3D = x["node"]
+    var ny: Node3D = y["node"]
+    var dx: float = Vector2(nx.global_position.x - _str_sort_p.x, nx.global_position.z - _str_sort_p.z).length()
+    var dy: float = Vector2(ny.global_position.x - _str_sort_p.x, ny.global_position.z - _str_sort_p.z).length()
+    return dx > dy
+
 func _str_apply_density(p: Vector3, cam: Camera3D) -> void:
     var factor: float = _str_density_factor()
+    _str_sort_p = p
 
     var car_target: int = int(roundf(float(traffic.size()) * factor))
     var active_cars: Array = []
@@ -174,8 +189,7 @@ func _str_apply_density(p: Vector3, cam: Camera3D) -> void:
         else:
             active_cars.append(a)
     if active_cars.size() > car_target:
-        active_cars.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
-            return Vector2(float(x["x"]) - p.x, float(x["z"]) - p.z).length() > Vector2(float(y["x"]) - p.x, float(y["z"]) - p.z).length())
+        active_cars.sort_custom(_str_cmp_car)
         for i in range(active_cars.size() - car_target):
             var a2: Dictionary = active_cars[i]
             a2["off"] = true
@@ -209,10 +223,7 @@ func _str_apply_density(p: Vector3, cam: Camera3D) -> void:
         else:
             active_peds.append(d)
     if active_peds.size() > ped_target:
-        active_peds.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
-            var nx: Node3D = x["node"]
-            var ny: Node3D = y["node"]
-            return Vector2(nx.global_position.x - p.x, nx.global_position.z - p.z).length() > Vector2(ny.global_position.x - p.x, ny.global_position.z - p.z).length())
+        active_peds.sort_custom(_str_cmp_ped)
         for i in range(active_peds.size() - ped_target):
             var d2: Dictionary = active_peds[i]
             d2["off"] = true
