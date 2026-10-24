@@ -65,9 +65,14 @@ func _opt_chunk_mesh(node_name: String, range_end: float, shadows: bool, vivid: 
     if src == null or src.mesh == null or src.mesh.get_surface_count() == 0:
         return
     var arrays: Array = src.mesh.surface_get_arrays(0)
+    # A headless / dummy renderer keeps no vertex data: leave the mesh as it is.
+    if arrays.size() <= Mesh.ARRAY_COLOR or arrays[Mesh.ARRAY_VERTEX] == null or arrays[Mesh.ARRAY_NORMAL] == null or arrays[Mesh.ARRAY_COLOR] == null:
+        return
     var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
     var norms: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
     var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+    if verts.is_empty() or norms.size() != verts.size() or cols.size() != verts.size():
+        return
     var mat: Material = src.material_override
     var buckets: Dictionary = {}
     var i: int = 0
