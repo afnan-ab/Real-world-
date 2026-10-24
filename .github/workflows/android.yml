@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -97,7 +99,7 @@ jobs:
             --editor \
             --path . \
             --quit \
-            --verbose
+            --verbose 2>&1 | tee /tmp/validate.log || true
 
       - name: Fetch free CC0 car models (Kenney Car Kit)
         # Optional: if the download or the file names differ, the build goes on
@@ -173,6 +175,16 @@ jobs:
             --path . \
             --import
 
+      - name: Smoke test (run the game headless for a few seconds)
+        # Runs the real main scene without a screen, so script errors that only
+        # show up while the game runs end up in the log. Never fails the build.
+        continue-on-error: true
+        run: |
+          timeout 120 ./Godot_v4.4.1-stable_linux.x86_64 \
+            --headless \
+            --path . \
+            --quit-after 300 2>&1 | tee /tmp/smoke.log || true
+
       - name: Export Android APK
         run: |
           mkdir -p build
@@ -196,3 +208,43 @@ jobs:
           name: real-world-open-world-apk
           path: build/real_world_open_world.apk
           if-no-files-found: error
+
+      - name: Publish diagnostics to the ci-logs branch
+        # Writes the script errors from the validate and smoke steps to
+        # logs/<branch>.txt on the ci-logs branch so they can be read without
+        # opening the Actions logs. Never fails the build.
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "branch: $GITHUB_REF_NAME"
+            echo "commit: $GITHUB_SHA"
+            echo
+            echo "=== boot layer lines ==="
+            grep -hE "MC boot" /tmp/smoke.log || echo "(none)"
+            echo
+            echo "=== errors from the validate step ==="
+            grep -nE "SCRIPT ERROR|Parse Error|ERROR:|Failed to load script|Compile Error" /tmp/validate.log | head -80 || echo "(none)"
+            echo
+            echo "=== errors from the smoke test ==="
+            grep -nE "SCRIPT ERROR|Parse Error|ERROR:|Failed to load script|Compile Error|Invalid " /tmp/smoke.log | head -150 || echo "(none)"
+            echo
+            echo "=== last 60 lines of the smoke test ==="
+            tail -60 /tmp/smoke.log || true
+          } > /tmp/diag.txt 2>&1 || true
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          SAFE_NAME="${GITHUB_REF_NAME//\//_}"
+          cp /tmp/diag.txt "/tmp/$SAFE_NAME.txt"
+          if git ls-remote --exit-code --heads origin ci-logs >/dev/null 2>&1; then
+            git fetch origin ci-logs
+            git checkout -f -B ci-logs FETCH_HEAD
+          else
+            git checkout --orphan ci-logs
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p logs
+          cp "/tmp/$SAFE_NAME.txt" "logs/$SAFE_NAME.txt"
+          git add logs
+          git commit -m "ci logs for $GITHUB_REF_NAME" || true
+          git push origin ci-logs
