@@ -1,0 +1,27 @@
+branch: phase-12-safe-boot
+commit: 474595786c30ca2a5d0c498e63ad608f6813379c
+
+=== boot layer lines ===
+MC boot layer: res://scripts/mad_city_stream.gd
+
+=== errors from the validate step ===
+434:SCRIPT ERROR: Parse Error: Cannot infer the type of "result" variable because the value doesn't have a set type.
+436:SCRIPT ERROR: Parse Error: Cannot infer the type of "v" variable because the value doesn't have a set type.
+438:SCRIPT ERROR: Parse Error: Cannot infer the type of "delta_screen" variable because the value doesn't have a set type.
+440:ERROR: Failed to load script "res://scripts/hud_controller.gd" with error "Parse error".
+444:SCRIPT ERROR: Parse Error: Cannot infer the type of "p" variable because the value doesn't have a set type.
+446:SCRIPT ERROR: Parse Error: Cannot infer the type of "dl" variable because the value doesn't have a set type.
+448:ERROR: Failed to load script "res://scripts/hud_fallback.gd" with error "Parse error".
+480:SCRIPT ERROR: Parse Error: Cannot infer the type of "px" variable because the value doesn't have a set type.
+482:SCRIPT ERROR: Parse Error: Cannot infer the type of "py" variable because the value doesn't have a set type.
+484:SCRIPT ERROR: Parse Error: Cannot infer the type of "pos" variable because the value doesn't have a set type.
+486:SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+488:SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+490:ERROR: Failed to load script "res://scripts/ui.gd" with error "Parse error".
+
+=== errors from the smoke test ===
+
+=== last 60 lines of the smoke test ===
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+MC boot layer: res://scripts/mad_city_stream.gd
