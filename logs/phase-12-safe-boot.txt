@@ -1,5 +1,5 @@
 branch: phase-12-safe-boot
-commit: bc6f8f6fad9049a4391b8207d7e56616d8b0a1dd
+commit: cb62975565bce1008b459669e00c72c87c81d2a7
 
 === boot layer lines ===
 MC boot layer: res://scripts/mad_city_stream.gd
