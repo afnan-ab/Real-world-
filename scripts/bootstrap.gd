@@ -46,3 +46,13 @@ func _enter_tree() -> void:
         tag.add_theme_font_size_override("font_size", 12)
         tag.add_theme_color_override("font_color", Color(0.7, 0.8, 0.8))
         hud.add_child(tag)
+    # CI only: drive the game through its features (see smoke_scenario.gd).
+    if OS.get_environment("MC_SMOKE") == "1":
+        var scenario_script: GDScript = load("res://scripts/smoke_scenario.gd") as GDScript
+        if scenario_script != null and scenario_script.can_instantiate():
+            var scenario := Node.new()
+            scenario.name = "SmokeScenario"
+            scenario.set_script(scenario_script)
+            call_deferred("add_child", scenario)
+        else:
+            print("MC boot: smoke scenario script could not be loaded")
