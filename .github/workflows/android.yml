@@ -175,15 +175,18 @@ jobs:
             --path . \
             --import
 
-      - name: Smoke test (run the game headless for a few seconds)
-        # Runs the real main scene without a screen, so script errors that only
-        # show up while the game runs end up in the log. Never fails the build.
+      - name: Smoke test (play the game headless with a script)
+        # Runs the real main scene without a screen and lets smoke_scenario.gd
+        # press the buttons (mission, car, shooting, cops, home, jail, helicopter,
+        # fixer, kiosk), so script errors end up in the log. Never fails the build.
         continue-on-error: true
+        env:
+          MC_SMOKE: "1"
         run: |
-          timeout 120 ./Godot_v4.4.1-stable_linux.x86_64 \
+          timeout 240 ./Godot_v4.4.1-stable_linux.x86_64 \
             --headless \
             --path . \
-            --quit-after 300 2>&1 | tee /tmp/smoke.log || true
+            --quit-after 1500 2>&1 | tee /tmp/smoke.log || true
 
       - name: Export Android APK
         run: |
@@ -223,14 +226,17 @@ jobs:
             echo "=== boot layer lines ==="
             grep -hE "MC boot" /tmp/smoke.log || echo "(none)"
             echo
-            echo "=== errors from the validate step ==="
+            echo "=== smoke scenario progress ==="
+            grep -hE "^SMOKE" /tmp/smoke.log || echo "(none)"
+            echo
+            echo "=== errors from the validate step (old unused scripts are expected here) ==="
             grep -nE "SCRIPT ERROR|Parse Error|ERROR:|Failed to load script|Compile Error" /tmp/validate.log | head -80 || echo "(none)"
             echo
             echo "=== errors from the smoke test ==="
-            grep -nE "SCRIPT ERROR|Parse Error|ERROR:|Failed to load script|Compile Error|Invalid " /tmp/smoke.log | head -150 || echo "(none)"
+            grep -nE "SCRIPT ERROR|Parse Error|ERROR:|Failed to load script|Compile Error|Invalid |WARNING:" /tmp/smoke.log | head -200 || echo "(none)"
             echo
-            echo "=== last 60 lines of the smoke test ==="
-            tail -60 /tmp/smoke.log || true
+            echo "=== last 40 lines of the smoke test ==="
+            tail -40 /tmp/smoke.log || true
           } > /tmp/diag.txt 2>&1 || true
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
