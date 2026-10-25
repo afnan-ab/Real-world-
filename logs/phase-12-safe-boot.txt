@@ -1,10 +1,33 @@
 branch: phase-12-safe-boot
-commit: cb62975565bce1008b459669e00c72c87c81d2a7
+commit: a3b728337d11dc4074aef6a296ef38fb0aad00e6
 
 === boot layer lines ===
 MC boot layer: res://scripts/mad_city_stream.gd
 
-=== errors from the validate step ===
+=== smoke scenario progress ===
+SMOKE start mission
+SMOKE wanted level 5
+SMOKE cops=2
+SMOKE driveable vehicles=4
+SMOKE in_vehicle=true
+SMOKE car speed=0.0
+SMOKE on foot=true
+SMOKE ammo=[35, 0, 0, 0, 0]
+SMOKE inside=0
+SMOKE after bed, time=5.31521423
+SMOKE inside after exit=-1
+SMOKE busted
+SMOKE inside (jail)=2
+SMOKE heli driving
+SMOKE heli height=0.34522566199303
+SMOKE crash event queued
+SMOKE responders=2
+SMOKE after fixer, heat=48.27509 money=5000
+SMOKE after kiosk, money=4960
+SMOKE traffic=26 npcs=36
+SMOKE DONE
+
+=== errors from the validate step (old unused scripts are expected here) ===
 435:SCRIPT ERROR: Parse Error: Cannot infer the type of "result" variable because the value doesn't have a set type.
 437:SCRIPT ERROR: Parse Error: Cannot infer the type of "v" variable because the value doesn't have a set type.
 439:SCRIPT ERROR: Parse Error: Cannot infer the type of "delta_screen" variable because the value doesn't have a set type.
@@ -20,8 +43,205 @@ MC boot layer: res://scripts/mad_city_stream.gd
 493:ERROR: Failed to load script "res://scripts/ui.gd" with error "Parse error".
 
 === errors from the smoke test ===
+9:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+11:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+13:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+15:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+17:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+19:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+21:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+23:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+25:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+27:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+29:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+31:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+33:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+35:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+37:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+39:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+41:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+43:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+45:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+47:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+49:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+51:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+53:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+55:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+57:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+59:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+61:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+63:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+65:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+67:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+69:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+71:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+73:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+75:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+77:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+79:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+81:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+83:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+85:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+87:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+89:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+91:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+93:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+95:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+97:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+99:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+101:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+103:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+105:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+107:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+109:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+111:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+113:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+115:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+117:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+119:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+121:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+123:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+125:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+127:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+129:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+131:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+133:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+135:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+137:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+139:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+141:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+143:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+145:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+147:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+149:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+151:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+153:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+155:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+157:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+159:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+161:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+163:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+165:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+167:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+169:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+171:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+173:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+175:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+177:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+179:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+181:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+183:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+185:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+187:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+189:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+191:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+193:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+195:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+197:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+199:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+201:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+203:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+205:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+207:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+209:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+211:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+213:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+215:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+217:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+219:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+221:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+223:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+225:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+227:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+229:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+231:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+233:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+235:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+237:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+239:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+241:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+243:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+245:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+247:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+249:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+251:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+253:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+255:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+257:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+259:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+261:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+263:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+265:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+267:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+270:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+272:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+274:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+276:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+278:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+280:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+282:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+284:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+286:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+288:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+290:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+292:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+294:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+296:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+298:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+300:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+302:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+304:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+306:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+308:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+310:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+312:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+314:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+316:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+318:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+320:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+322:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+324:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+326:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+328:SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
 
-=== last 60 lines of the smoke test ===
-Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
-
-MC boot layer: res://scripts/mad_city_stream.gd
+=== last 40 lines of the smoke test ===
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SCRIPT ERROR: Invalid call. Nonexistent 'bool' constructor.
+          at: _mc_check_crashes (res://scripts/mad_city_air.gd:46)
+SMOKE on foot=true
+SMOKE ammo=[35, 0, 0, 0, 0]
+SMOKE inside=0
+SMOKE after bed, time=5.31521423
+SMOKE inside after exit=-1
+SMOKE busted
+SMOKE inside (jail)=2
+SMOKE heli driving
+SMOKE heli height=0.34522566199303
+SMOKE crash event queued
+SMOKE responders=2
+SMOKE after fixer, heat=48.27509 money=5000
+SMOKE after kiosk, money=4960
+SMOKE traffic=26 npcs=36
+SMOKE DONE
