@@ -42,7 +42,9 @@ func _mc_build_helipad() -> void:
     driveable_vehicles.append(heli)
 
 # Flying high above traffic must not count as hitting cars.
+# Normal cars have no "is_heli" property, so get() returns null there;
+# bool(null) is an invalid call, so compare against true instead.
 func _mc_check_crashes(veh: Node3D, speed_ms: float) -> void:
-    if bool(veh.get("is_heli")) and veh.global_position.y > 3.0:
+    if veh.get("is_heli") == true and veh.global_position.y > 3.0:
         return
     super._mc_check_crashes(veh, speed_ms)
