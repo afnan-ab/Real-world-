@@ -7,13 +7,18 @@ extends "res://scripts/mad_city_life.gd"
 # maps, no UVs needed), glass-like reflective windows and 2x MSAA.
 # This is a "better looking" pass, not photo-real: real 3D models and textures
 # have to be added to the repo as assets for that.
+# Added: a GTA-like night mood (cooler, a bit desaturated and contrasty at
+# night) and a light vignette on screen.
 
 var _mc_env: Environment
 var _mc_fog_timer: float = 0.0
 
+const MC_VIGNETTE_CODE := "shader_type canvas_item;\nuniform float strength = 0.32;\nvoid fragment() {\n    vec2 uv = (UV - vec2(0.5)) * vec2(1.0, 1.15);\n    float v = smoothstep(0.38, 0.95, length(uv));\n    COLOR = vec4(0.0, 0.0, 0.0, v * strength);\n}\n"
+
 func _ready() -> void:
     super._ready()
     _mc_apply_graphics()
+    _mc_add_vignette()
 
 func _mc_noise_tex(freq: float, as_normal: bool, bump: float, seed_v: int, low: float) -> NoiseTexture2D:
     var n := FastNoiseLite.new()
@@ -83,9 +88,27 @@ func _mc_apply_graphics() -> void:
         _mc_env.fog_enabled = true
         _mc_env.fog_density = 0.0011
         _mc_env.fog_light_color = Color("#b4c6d0")
+        _mc_env.adjustment_enabled = true
 
     # Smoother edges.
     get_viewport().msaa_3d = Viewport.MSAA_2X
+
+# Light dark-edge vignette drawn under the HUD (layer 0).
+func _mc_add_vignette() -> void:
+    var shader := Shader.new()
+    shader.code = MC_VIGNETTE_CODE
+    var mat := ShaderMaterial.new()
+    mat.shader = shader
+    var rect := ColorRect.new()
+    rect.material = mat
+    rect.color = Color(1.0, 1.0, 1.0, 1.0)
+    rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+    rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var layer := CanvasLayer.new()
+    layer.name = "MC_Vignette"
+    layer.layer = 0
+    layer.add_child(rect)
+    add_child(layer)
 
 func _process(delta: float) -> void:
     super._process(delta)
@@ -97,3 +120,6 @@ func _process(delta: float) -> void:
     var day: float = clampf(sin((time_of_day - 6.0) / 24.0 * TAU) * 2.0 + 0.3, 0.0, 1.0)
     _mc_env.fog_light_color = Color("#0a1018").lerp(Color("#b4c6d0"), day)
     _mc_env.fog_density = lerpf(0.0016, 0.0011, day)
+    # Night mood: a little more contrast and less colour at night.
+    _mc_env.adjustment_contrast = lerpf(1.12, 1.03, day)
+    _mc_env.adjustment_saturation = lerpf(0.84, 1.0, day)
