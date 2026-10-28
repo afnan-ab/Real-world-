@@ -7,13 +7,19 @@ extends "res://scripts/mad_city_life.gd"
 # maps, no UVs needed), glass-like reflective windows and 2x MSAA.
 # This is a "better looking" pass, not photo-real: real 3D models and textures
 # have to be added to the repo as assets for that.
-# Added: a GTA-like night mood (cooler, a bit desaturated and contrasty at
-# night) and a light vignette on screen.
+# Added: a GTA-like night mood (more contrast and less colour at night, the
+# daytime look from world.gd is kept) and a light vignette on screen.
 
 var _mc_env: Environment
 var _mc_fog_timer: float = 0.0
 
 const MC_VIGNETTE_CODE := "shader_type canvas_item;\nuniform float strength = 0.32;\nvoid fragment() {\n    vec2 uv = (UV - vec2(0.5)) * vec2(1.0, 1.15);\n    float v = smoothstep(0.38, 0.95, length(uv));\n    COLOR = vec4(0.0, 0.0, 0.0, v * strength);\n}\n"
+
+# world.gd sets contrast 1.20 and saturation 1.16 for daytime; night goes from there.
+const MC_DAY_CONTRAST := 1.20
+const MC_DAY_SATURATION := 1.16
+const MC_NIGHT_CONTRAST := 1.30
+const MC_NIGHT_SATURATION := 0.88
 
 func _ready() -> void:
     super._ready()
@@ -121,5 +127,5 @@ func _process(delta: float) -> void:
     _mc_env.fog_light_color = Color("#0a1018").lerp(Color("#b4c6d0"), day)
     _mc_env.fog_density = lerpf(0.0016, 0.0011, day)
     # Night mood: a little more contrast and less colour at night.
-    _mc_env.adjustment_contrast = lerpf(1.12, 1.03, day)
-    _mc_env.adjustment_saturation = lerpf(0.84, 1.0, day)
+    _mc_env.adjustment_contrast = lerpf(MC_NIGHT_CONTRAST, MC_DAY_CONTRAST, day)
+    _mc_env.adjustment_saturation = lerpf(MC_NIGHT_SATURATION, MC_DAY_SATURATION, day)
