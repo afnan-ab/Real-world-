@@ -1,5 +1,5 @@
 branch: phase-12-safe-boot
-commit: e1f12a5883a205b75f238b34c9e65549028f5cce
+commit: 2897bfffea91047c6e3630a2fa83e392843a5cf2
 
 === boot layer lines ===
 MC boot layer: res://scripts/mad_city_stream.gd
@@ -14,15 +14,15 @@ SMOKE car speed=0.0
 SMOKE on foot=true
 SMOKE ammo=[35, 0, 0, 0, 0]
 SMOKE inside=0
-SMOKE after bed, time=5.315214545
+SMOKE after bed, time=8.1689744749999
 SMOKE inside after exit=-1
 SMOKE busted
 SMOKE inside (jail)=2
 SMOKE heli driving
-SMOKE heli height=0.34583330154419
+SMOKE heli height=0.34931179881096
 SMOKE crash event queued
 SMOKE responders=2
-SMOKE after fixer, heat=48.275 money=5000
+SMOKE after fixer, heat=48.27485 money=5000
 SMOKE after kiosk, money=4960
 SMOKE traffic=26 npcs=36
 SMOKE DONE
@@ -57,15 +57,15 @@ SMOKE car speed=0.0
 SMOKE on foot=true
 SMOKE ammo=[35, 0, 0, 0, 0]
 SMOKE inside=0
-SMOKE after bed, time=5.315214545
+SMOKE after bed, time=8.1689744749999
 SMOKE inside after exit=-1
 SMOKE busted
 SMOKE inside (jail)=2
 SMOKE heli driving
-SMOKE heli height=0.34583330154419
+SMOKE heli height=0.34931179881096
 SMOKE crash event queued
 SMOKE responders=2
-SMOKE after fixer, heat=48.275 money=5000
+SMOKE after fixer, heat=48.27485 money=5000
 SMOKE after kiosk, money=4960
 SMOKE traffic=26 npcs=36
 SMOKE DONE
